@@ -1,0 +1,6 @@
+Here's how the jarvis_snakemake.yaml file was made, and how it can be used:
+I took a yaml file from jarvis
+conda env export > jarvis_snakemake.yaml
+and then made it my own (but changed the name)
+conda env create --name jarvis_snakemake --file jarvis_snakemake.yaml
+(I tried a few versions of the above, btw, before it worked. hopefully the errors in the process didn't build towards a solution that worked... ie, it's possible that that 1-liner might not fly)
