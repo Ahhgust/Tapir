@@ -3,12 +3,12 @@
 Installation involves three steps, which are as follows:
 
 -   [**Download**](#download) <br>Tapir is first downloaded (github and zenodo); it uses many big files, I strongly recommend using a fast local disk (SSD/NVMe is recommended)
--   **Configuration** <br>Tapir also requires (somewhat minimal) user configuration. This involves making an isolated environment (Conda), installing a few niche softwares (parallel and fastqc), as well as modifying your bashrc.
+-  **Configuration** <br>Tapir also requires (somewhat minimal) user configuration. This involves making an isolated environment (Conda), installing a few niche softwares (parallel and fastqc), as well as modifying your bashrc.
   - Tapir can be configured to run using a conda environment
   - Tapir can also be run natively
-    - A handful of "extra" applications may not work (namely, Fastqc)
-    - And a handful more are assumed to already be installed (samtools, bcftools, bwa).
--   **Customization** <br>Tapir also supports performance tweaks; this includes references to local (fast) storage devices (NVME recommended; likely different than found in the `Install`.) as well as load-balancing (increasing/decreasing the number of threads used by various routines)
+    -  A handful of "extra" applications may not work (namely, Fastqc)
+    -  And a handful more are assumed to already be installed (samtools, bcftools, bwa).
+-  **Customization** <br>Tapir also supports performance tweaks; this includes references to local (fast) storage devices (NVME recommended; likely different than found in the `Install`.) as well as load-balancing (increasing/decreasing the number of threads used by various routines)
 
 ## Download
 
