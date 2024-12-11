@@ -18,6 +18,9 @@ Illumina disallows the following sample names: <br>
 all, undetermined <br>
 <br>
 In addition, Tapir treats sample names that start with UD (eg, UDI, UDP) as adapter names (without a sample); eg, these "sample names" are dedicated to adapter sequences that are the result of carryover.
+<br>
+**In other words, a REAL sample name cannot start with UD**
+
 
 ### Additional Notes
 - Both sample sheets are set up to extract multiple samples. At the CHI we extract out all adapter sequences, including those not intended/expected, as those data are important for detecting carryover and/or contamination.
