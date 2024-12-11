@@ -314,6 +314,8 @@ def bcl_complete(wildcards):
     return os.path.join(BCLPATH, "RunCompletionStatus.xml")
 
 
+#TODO: branch for bcl-convert or bcl2fastq
+# to implement, parse the sample sheet accordingly.
 rule bcl:
     input:
         expand("{outdir}/{rundir}/SampleSheet.csv", outdir=os.path.join(OUTDIR,EXPERIMENT), rundir=BCLDIR), # extract fastqs (successfully)...
