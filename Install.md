@@ -117,7 +117,7 @@ Tapir is largely self-contained. It is assumed that the following are already in
 - bwa
   - version 0.71 or higher (tested on 0.7.17-r1188)
 - Fastqc
-y- Pysam
+- Pysam
 - GNU parallel
 - singularity (optional)
   - version 3.8.7-1.el7
