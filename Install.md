@@ -39,7 +39,7 @@ E.G., if you have a nice fast solid state drive mounted to /mnt/disk0/, try
 ```
 cd ..
 mv -i Tapir /mnt/disk0/
-chmod -R 775 /mnt/disk0
+chmod -R 775 /mnt/disk0/Tapir
 ```
 
 ### Configure Host OS
@@ -75,7 +75,7 @@ If you're using some other shell, you'll need to translate these commands as nec
 
 ### Conda install (recommended)
 
-Conda is by far the easiest way to go about configuring Tapir.
+Conda is by far the easiest way to go about configuring Tapir. <br><br>
 *Skip this step if Conda is already installed*
 ```
 cd ~/
