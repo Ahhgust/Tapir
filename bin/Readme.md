@@ -19,5 +19,5 @@ fastqc must be installed used conda; if you're installing Tapir natively, you'll
 and I have yet to see value in it, however maybe the use-case just hasn't presented itself yet...
 
 ### Concluding remarks
-There are other programs made available by tapir that haven't been integrated into the snakemake flows; (deML)[https://github.com/grenaud/deML] and Beagle are two such examples that are present (as an executable). Should you desire, you can try integrating them yourself! (If you think this is my way of having you do work for me, you'd be right!). 
+There are other programs made available by tapir that haven't been integrated into the snakemake flows; [deML](https://github.com/grenaud/deML) and [Beagle](http://faculty.washington.edu/browning/beagle/beagle.html) are two such examples that are present (as an executable). Should you desire, you can try integrating them yourself! (If you think this is my way of having you do work for me, you'd be right!). 
 
