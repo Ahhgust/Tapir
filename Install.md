@@ -76,7 +76,26 @@ If you're using some other shell, you'll need to translate these commands as nec
 ### Conda install (recommended)
 
 Conda is by far the easiest way to go about configuring Tapir.
+*Skip this step if Conda is already installed*
+```
+cd ~/
+mkdir -p src
+cd src
+curl -O https://repo.anaconda.com/archive/Anaconda3-2024.06-1-Linux-x86_64.sh
+bash ./Anaconda3-2024.06-1-Linux-x86_64.sh
+```
+and read (ha) and accept the licensing agreement; choose defaults for everything EXCEPT <br>
+set conda to auto-load
+```
+You can undo this by running `conda init --reverse $SHELL`? [yes|no]
+[no] >>> yes
+```
 
+Now, let's set up your environment:
+```
+conda env create --name tapir --file PATH_TO_TAPIR/snakemakes/tapir.yaml
+```
+where PATH_TO_TAPIR is the, well, the path to this program (`/mnt/disk0/Tapir` in the example).
 
 
 ### Native install
@@ -98,7 +117,8 @@ Tapir is largely self-contained. It is assumed that the following are already in
 - bwa
   - version 0.71 or higher (tested on 0.7.17-r1188)
 - Fastqc
-  - (any way you can get it to work)
+y- Pysam
+- GNU parallel
 - singularity (optional)
   - version 3.8.7-1.el7
   - only necessary for DeepVariant (which we don't, in practice, use)
