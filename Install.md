@@ -75,11 +75,9 @@ If you're using some other shell, you'll need to translate these commands as nec
 
 ### Mamba install (recommended)
 
-Install Mamba
-
-### Conda install (much slower, but works)
+Install Mamba <br><br>
 *Skip this step if Conda is already installed*
-Download it!
+Download Mamba!
 ```
 cd ~
 mkdir -p src/Mamba
