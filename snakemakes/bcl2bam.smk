@@ -1,12 +1,36 @@
 import glob, os, sys, re, time, gzip
-configfile: "/eva/codebase/snakemakes/config_v2.yaml"
+import GenomixHelper
+
+VERSION=0.20
+# List of changes
+# Added support for the MiSeq (by changing the CopyComplete.txt dependency when extracting BCLs)
+
+
+configfile: os.path.join(workflow.current_basedir, "config_v2_1.yaml")
+# GX provides an alternative way to get information from the config file.
+# In practice, it creates the illusion of full paths (when they are needed),
+# by stitching together that path based on the directory of this script.
+# it also prepends python3/Rscript where needed
+GX= GenomixHelper.GenomixHelper(workflow.current_basedir, config)
+# you can still use the config dictionary directly, but only do so
+# when want you want is independent of the path
+
+# we use this a lot; let's just pull it out.
+# reference genome
+hg38=GX.getResources("Reference")
+
+# bcftools binary:
+bcftools=GX.getParam("bcftools", "binary")
+
+# samtools binary
+samtools=GX.getParam("samtools", "binary")
+
 
 def sanitizeString(s):
     """
     strips out non-alphanumeric symbols from a string s (input), and returns it    
     """
-    return "".join(c for c in s if c.isalnum() or c == "_")
-
+    return "".join(c for c in s if c.isalnum() or c == "_" or c == '-' or c == '/')
 
 
 SAMPLES=dict()
@@ -37,7 +61,7 @@ if not os.path.isfile(SAMPLESHEET):
     # check and see if it's in the BCL directory
     SAMPLESHEET=os.path.join(config["Bcldir"], SAMPLESHEET)
     if not os.path.isfile(SAMPLESHEET):   
-        print(config["Samplesheet"] , " does not exist...", file=sys.stderr)
+        print(config["Samplesheet"] , " does not exist...", SAMPLESHEET, file=sys.stderr)
         exit(1)
 
 def parseSamplesheet(sheet):
@@ -49,6 +73,7 @@ def parseSamplesheet(sheet):
     """
     getData=False
     getHeader=False
+    print("Parsing sample sheet" , sheet)
     idCol = -1
     nameCol=-1
     libCol=-1
@@ -56,24 +81,25 @@ def parseSamplesheet(sheet):
     duptest= set()
     global EXPERIMENT
     global LIBRARIES
-    
+    ret = "bcl2fastq" # default to bcl2fastq
     with open(sheet) as fh:
         for line in fh:
             line=line.rstrip()
             if line.startswith("[Data]"):
                 getHeader=True
-            elif not getHeader and EXPERIMENT=="":
-                if line.startswith("Experiment Name"):
-                    # this is a CSV element. grab the first non-empty element.
-                    s = line.split(",")[1:]
-                    for elem in s:
-                        if elem != "":
-                            EXPERIMENT=sanitizeString(elem)
-                            break
-                
-            elif getHeader:
+            elif not getHeader:
+                if EXPERIMENT=="":
+                    if line.startswith("Experiment Name"):
+                        # this is a CSV element. grab the first non-empty element.
+                        s = line.split(",")[1:]
+                        for elem in s:
+                            if elem != "":
+                                EXPERIMENT=sanitizeString(elem)
+                                break
+                if line.startswith("AdapterRead1,"): # one of the handful of syntactic differences between a bcl-convert sample sheet and a bcl2fastq sample sheet
+                    ret="bcl-convert"
+            elif getHeader and not getData:
                 getData=True
-                getHeader=False
                 sp = line.split(",")
                 i=0
                 for colid in sp:
@@ -91,8 +117,8 @@ def parseSamplesheet(sheet):
                 if libCol<0:
                     print("Failed to extract the library from", sheet, config["SamplesheetLibraryColumn"], sep="\n", file=sys.stderr)
                     exit(1)
-                    
             elif getData:
+
                 sp = line.split(",")
                 sid=sname=""
                 if idCol >= 0:
@@ -111,12 +137,17 @@ def parseSamplesheet(sheet):
                     print("Blank sample name detected..", line, sep="\n", file=sys.stderr)
                     
                 LIBRARIES[name]=sp[libCol]
-                
                 if name in duptest:
                     print("Duplicate sample names detected; that's a problem", name, line, sep="\n", file=sys.stderr)
                     errs+=1
                 elif name.find("_") >= 0:
                     print("Underscores are not allowed in sample identifiers. Maybe use a - instead?", name, file=sys.stderr)
+                    errs+=1
+                elif name.find(" ") >= 0:
+                    print("Spaces are not allowed in sample identifiers. Maybe use a - instead?", name, file=sys.stderr)
+                    errs+=1
+                elif name.find(".") >= 0:
+                    print("Periods are not allowed in sample identifiers. Maybe use a - instead?", name, file=sys.stderr)
                     errs+=1
                 duptest.add(name)
     if errs:
@@ -126,8 +157,22 @@ def parseSamplesheet(sheet):
     if EXPERIMENT == "":
         print("Failed to parse the Experiment Name (config[Experiment]) from the sample sheet", file=sys.stderr)
         exit(1)
-        
+    print( " ".join(duptest) , " are the samples in the sample sheet")    
+    return ret
 
+def isEmptyGzip(f):
+    """
+    returns True/False iff a gzipped file is "empty" (may have nonzero file size, but not contents)
+    """
+    if os.path.getsize(f) == 0:
+        return True
+    h= gzip.open(f, "rb")
+    empty=True
+    for line in h:
+        empty=False
+        break
+    h.close()
+    return empty
 
 def parseFastqs(basedir):
     """
@@ -144,6 +189,9 @@ def parseFastqs(basedir):
     for x in SAMPLENAME:
         if re.match('.*_?.*_L\d+.*',x) is not None:
             if x.find("_R2_") > -1: # we ignore read 2 (and test for its presence later on)
+                continue
+            # bcl2fastq does not emit empty fastqs; bcl-convert does. This effectively skips the empties
+            if isEmptyGzip(x):
                 continue
             
             # file format is:
@@ -250,7 +298,7 @@ def gather_all_reports(wildcards):
         files.extend( \
             expand("{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.{suffix}", \
             outdir=wildcards.outdir, rundir=wildcards.rundir, dirname=samp, samplename=samp,\
-            suffix=["demix.summary", "r1_fastqc.zip", "flagstat", "samstats.cov", "bqsr_summary.pdf"]))
+            suffix=["bqsr.demix.summary", "r1_fastqc.zip", "flagstat", "samstats.cov", "bqsr_summary.pdf"]))
             #mixure analysis, fastqc, samtools flagstat, samstats (coverage estimate), and bqsr-post hoc summary
 
             
@@ -267,36 +315,78 @@ def gather_all_reports(wildcards):
     print(files)        
     return files
     
-        
-parseSamplesheet(SAMPLESHEET) # determines the name of the Experiment and the library prep; performs a sanity check on the samples
+# set to either bcl2fastq or bcl-convert, depending on the format of the sample sheet
+bclConverter=parseSamplesheet(SAMPLESHEET) # determines the name of the Experiment and the library prep; performs a sanity check on the samples
+
+print(bclConverter , " is the converter")
+
+def bcl_complete(wildcards):
+    """
+    helper function; 
+    The Novaseq makes a "CopyComplete.txt" file when, well, the copying is complete
+    while the MiSeq makes no such file. RunCompletionStatus.xml seems like equivalent, though
+    """
+    global BCLPATH
+    file=os.path.join(BCLPATH, "CopyComplete.txt")
+    if os.path.isfile(file):
+        return file
+    return os.path.join(BCLPATH, "RunCompletionStatus.xml")
+
 
 
 rule bcl:
     input:
         expand("{outdir}/{rundir}/SampleSheet.csv", outdir=os.path.join(OUTDIR,EXPERIMENT), rundir=BCLDIR), # extract fastqs (successfully)...
         expand("{outdir}/{rundir}/RunAnalysisComplete.txt", outdir=os.path.join(OUTDIR,EXPERIMENT), rundir=BCLDIR)
-        
-checkpoint extract_fastqs:
-    input:
-        os.path.join(BCLPATH, "CopyComplete.txt")
-    params:
-        rl=config["bcl2fastqParams"]["params"],
-        samplesheet=SAMPLESHEET,
-        bclpath=BCLPATH,
-        binary=config["bcl2fastqParams"]["binary"]
-    threads:
-        config["bcl2fastqParams"]["threads"]
-    log:
-        "{outdir}/{rundir}/Fastqs/bcl2fastq.outerr"
-    output: 
-        "{outdir}/{rundir}/Fastqs/Stats/Stats.json"
-    shell:
-        """
-        bn=`dirname {output}`  
-        bn=`dirname $bn` # removes Stats/Stats.json
-        {params.binary} {params.rl} -R {params.bclpath} -w {threads} -p {threads} -o $bn --sample-sheet {params.samplesheet} --fastq-compression-level 9 2> {log}
-        """
 
+if bclConverter=="bcl2fastq":
+    checkpoint extract_fastqs:
+        input:
+            bcl_complete
+        params:
+            rl=GX.getParam("bcl2fastq", "params"),
+            samplesheet=SAMPLESHEET,
+            bclpath=BCLPATH,
+            binary=GX.getBinary("bcl2fastq"),
+        threads:
+            config["bcl2fastqParams"]["threads"]
+        log:
+            "{outdir}/{rundir}/Fastqs/bcl2fastq.outerr"
+        output: 
+            "{outdir}/{rundir}/Fastqs/Stats/Stats.json"
+        shell:            
+            """
+            bn=`dirname {output}`  
+            bn=`dirname $bn` # removes Stats/Stats.json
+            {params.binary} {params.rl} -R {params.bclpath} -w 0 -r {threads} -p {threads} -o $bn --sample-sheet {params.samplesheet} 2> {log}
+            """
+ 
+elif bclConverter=="bcl-convert":
+    checkpoint extract_fastqs:
+        input:
+            bcl_complete
+        params:
+            samplesheet=SAMPLESHEET,
+            bclpath=BCLPATH,
+            obinary=GX.getBinary("bclconvert"),
+            oparams=GX.getParam("bclconvert", "params")
+        threads:
+            config["bclconvertParams"]["threads"]
+        log:
+            "{outdir}/{rundir}/Fastqs/bcl-convert.outerr"
+        output: 
+            "{outdir}/{rundir}/Fastqs/Logs/FastqComplete.txt"
+        shell:
+            """
+            bn=`dirname {output}`  
+            bn=`dirname $bn` # removes Logs/FastqComplete.txt
+            {params.obinary} {params.oparams} --bcl-input-directory {params.bclpath} --output-directory $bn --bcl-num-conversion-threads {threads} --sample-sheet {params.samplesheet} 2> {log}
+            """
+
+else:
+    print("Should never happen; failed to deduce the right bcl to fastq converter!?", file=sys.stderr)
+    exit(1)
+    
 rule gather_fastqs:
     input:
         aggregate_fastqs # updates the SAMPLES and OFFTARGETS dictionaries.
@@ -338,8 +428,9 @@ rule bwa_mem_map:
     resources:
         mem_mb=config["samtoolsParams"]["mem_mb_sort"]
     params:
-        samtools_binary=config["samtoolsParams"]["binary"],
-        bwa_binary=config["bwamemParams"]["binary"],
+        samtools_binary=samtools,
+        bwa_binary=GX.getBinary("bwamem"),
+        ref=hg38,
         library=getLibrary 
     run:
         read1=input[0]
@@ -362,7 +453,7 @@ rule bwa_mem_map:
 			rg=$(echo "@RG\tID:$seqID"_"$id\tSM:$sm\tLB:{params.library}\tPL:ILLUMINA")
 			({params.bwa_binary} mem  -R $(echo "@RG\\tID:$sm"_"$seqID"_"$id\\tSM:$sm\\tLB:{params.library}\\tPL:ILLUMINA\\tPU:$pu") \
 			-t {threads} \
-			-M {config[refs][Reference]} \
+			-M {params.ref} \
 			{read1} {read2} | \
 			{params.samtools_binary} sort -@ {config[samtoolsParams][samtoolsThreads]}  -m {config[samtoolsParams][sortMem]} - > {output.bam} ) 2> {log}
 			"""
@@ -382,10 +473,11 @@ rule merge_and_leftalign_bams:
     log:
         "{outdir}/{dirname}/{rundir}/Logs/{samplename}.merge_leftalign.log"
     params:
-        binary=config["gatkParams"]["binary"]
+        binary=GX.getBinary("gatk"),
+        ref=hg38
     run:
         inputs_all= " ".join(["-I " + repr(i) for i in input])
-        shell("{params.binary} LeftAlignIndels --verbosity ERROR --QUIET true -R {config[refs][Reference]} {inputs_all} -O {output.bam} &> {log}")   
+        shell("{params.binary} --java-options {config[gatkParams][javaoptions]} LeftAlignIndels --verbosity ERROR --QUIET true -R {params.ref} {inputs_all} -O {output.bam} &> {log}")   
 
 
 rule markdup_bams:
@@ -396,7 +488,7 @@ rule markdup_bams:
     threads: config["sambambaParams"]["threads"]
     params:
         tmpprefix=config["tmpdirprefix"],
-        binary=config["sambambaParams"]["binary"]
+        binary=GX.getBinary("sambamba")
     log:
         "{outdir}/{dirname}/{rundir}/Logs/{samplename}.markdup.log"   
     shell:
@@ -408,9 +500,10 @@ rule make_bam_flagstats:
         "{outdir}/{dirname}/{rundir}/Bams/{samplename}.la.md.bam"
     output:
         "{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.flagstat"
-    threads: config["samtoolsParams"]["samtoolsThreads"]
+    threads: 
+        config["samtoolsParams"]["samtoolsThreads"]
     params:
-        binary=config["samtoolsParams"]["binary"]
+        binary=samtools
     log:
         "{outdir}/{dirname}/{rundir}/Logs/{samplename}.flagstat.log"
     shell:
@@ -424,10 +517,10 @@ rule make_bam_samstats:
     log:
         "{outdir}/{dirname}/{rundir}/Logs/{samplename}.la.md.samstats.log"
     params:
-        binary=config["samstatsParams"]["binary"]
-    threads: 1
+        binary=GX.getBinary("samstats"),
+        panel=GX.getParam("samstats", "panel")
     shell:
-        "{params.binary} {input} {config[samstatsParams][panel]}   > {output} 2> {log}"
+        "{params.binary} {input} {params.panel} > {output} 2> {log}"
 
 rule make_bam_cov:
     input:
@@ -436,35 +529,35 @@ rule make_bam_cov:
         "{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.samstats.cov"
     log:
         "{outdir}/{dirname}/{rundir}/Logs/{samplename}.la.md.samstatscov.log"
-    threads: 1
     params:
-        binary=config["samstatsParams"]["summarizer"] 
+        binary=GX.getSummarizer("samstats")
     shell:
         "{params.binary} {input}  > {output} 2> {log}"
 
 rule bam_estimate_mix:
     input:
-        "{outdir}/{dirname}/{rundir}/Bams/{samplename}.la.md.bam"
+        "{outdir}/{dirname}/{rundir}/Bams/{samplename}.la.md.bqsr.bam"
     output:
-        "{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.demix"
+        "{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.bqsr.demix"
     log:
-        "{outdir}/{dirname}/{rundir}/Logs/{samplename}.la.md.mf.log"
+        "{outdir}/{dirname}/{rundir}/Logs/{samplename}.la.md.mf.bqsr.log"
     params:
-        binary=config["demixtifyParams"]["binary"] 
+        binary=GX.getBinary("demixtify"),
+        panel=GX.getParam("demixtify", "panel")
     threads: 
         config["demixtifyParams"]["threads"]
     shell:
-        "{params.binary} -t {threads} -b {input} -v  {config[demixtifyParams][panel]} > {output} 2> {log}"
+        "{params.binary} -t {threads} -b {input} -v  {params.panel} > {output} 2> {log}"
     
 rule mix_summary:
     input:
-        "{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.demix"
+        "{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.bqsr.demix"
     output:
-        "{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.demix.summary"
+        "{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.bqsr.demix.summary"
     log:
-        "{outdir}/{dirname}/{rundir}/Logs/{samplename}.la.md.mf.summary.log"
+        "{outdir}/{dirname}/{rundir}/Logs/{samplename}.la.md.mf.bqsr.summary.log"
     params:
-        binary=config["demixtifyParams"]["summarizer"]
+        binary=GX.getSummarizer("demixtify")
     shell:
         "{params.binary} {input} > {output} 2> {log}"
 
@@ -478,8 +571,8 @@ rule fastqc:
         r1="{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.r1_fastqc.html",
         o1="{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.r1_fastqc.zip"
     params:
-        samtools_binary=config["samtoolsParams"]["binary"],
-        fastqc_binary=config["fastqcParams"]["binary"],
+        samtools_binary=samtools,
+        fastqc_binary=GX.getBinary("fastqc")
     log:
         "{outdir}/{dirname}/{rundir}/Logs/{samplename}.fastqc.log"
     shell: # note: this cannot be applied to the UDI- data.
@@ -507,11 +600,12 @@ rule gatk_learn_bqsr_table:
     log:
         "{outdir}/{dirname}/{rundir}/Logs/{samplename}.bqsr.recal.log"
     params:
-        binary=config["gatkParams"]["binary"],
-        args=config["gatkParams"]["bqsrargs"],
-        mask=config["atlasParams"]["bqsrmask"]
+        binary=GX.getBinary("gatk"),
+        args=GX.getParam("gatk", "bqsrargs"),
+        mask=GX.getParam("gatk", "bqsrmask"),
+        ref=hg38
     shell:
-        "{params.binary} --java-options {config[gatkParams][javaoptions]} BaseRecalibrator {params.args} -R {config[refs][Reference]} -O {output} -I {input}  --known-sites {params.mask}.gz &> {log}"
+        "{params.binary} --java-options {config[gatkParams][javaoptions]} BaseRecalibrator {params.args} -R {params.ref} -O {output} -I {input}  --known-sites {params.mask} &> {log}"
 
 rule gatk_apply_bqsr:
     input:
@@ -522,12 +616,14 @@ rule gatk_apply_bqsr:
     log:
         "{outdir}/{dirname}/{rundir}/Logs/{samplename}.bqsr.apply.log"
     params:
-        binary=config["gatkParams"]["binary"]
+        binary=GX.getBinary("gatk"),
+        ref=hg38,
+        compression_level=9
     shell:# the ln -s command makes a foo.bam.bai index file ; by default, GATK makes their index files as foo.bai instead (which breaks some downstream tools)
         """
-        {config[gatkParams][binary]} --java-options '{config[gatkParams][javaoptions]} -Dsamjdk.compression_level=9' ApplyBQSR --QUIET true --create-output-bam-index true -R {config[refs][Reference]} -O {output} --bqsr-recal-file {input.recal_file} -I {input.bam} &> {log}
-        # trims off the last letter in the bam (.bam -> bai), and sets that as the source of the symlink
-        ln -s `echo {output} | rev | cut -b2- | rev`i {output}.bai 
+        {params.binary} --java-options '{config[gatkParams][javaoptions]} -Dsamjdk.compression_level={params.compression_level}' ApplyBQSR --QUIET true --create-output-bam-index true -R {params.ref} -O {output} --bqsr-recal-file {input.recal_file} -I {input.bam} &> {log}
+        # makes a .bam.bai version of the .bai file, too. 
+        cp `echo {output} | rev | cut -b2- | rev`i {output}.bai 
         """
 
 # note: requires R packages: gplots and gsalib (legacy code; may be difficult to install)
@@ -541,12 +637,13 @@ rule plot_gatk_bqsr:
     log:
         "{outdir}/{dirname}/{rundir}/Logs/{samplename}.bqsr.plots.log"            
     params:
-        binary=config["gatkParams"]["binary"],
-        args=config["gatkParams"]["bqsrargs"],
-        mask=config["atlasParams"]["bqsrmask"]
+        binary=GX.getBinary("gatk"),
+        args=GX.getParam("gatk", "bqsrargs"),
+        mask=GX.getParam("gatk", "bqsrmask"),
+        ref=hg38
     shell:
         """
-        {params.binary} --java-options {config[gatkParams][javaoptions]} BaseRecalibrator {params.args} -R {config[refs][Reference]} -O {output.posthoc_file} -I {input.bam} --known-sites {params.mask}.gz &> {log}
+        {params.binary} --java-options {config[gatkParams][javaoptions]} BaseRecalibrator {params.args} -R {params.ref} -O {output.posthoc_file} -I {input.bam} --known-sites {params.mask} &> {log}
         {params.binary} --java-options {config[gatkParams][javaoptions]} AnalyzeCovariates --QUIET --before {input.recal_file} --after {output.posthoc_file} --plots {output.report} &>> {log}
         """    
   

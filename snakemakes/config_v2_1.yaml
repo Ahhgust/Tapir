@@ -71,7 +71,13 @@ refs:
 
 bcl2fastqParams:
     binary: "bin/bcl2fastq"
-    params: "--minimum-trimmed-read-length 0 --ignore-missing-bcls "
+    params: "--minimum-trimmed-read-length 0 --ignore-missing-bcls --create-fastq-for-index-reads  --fastq-compression-level 9"
+    threads: 256
+    xtra: ""
+
+bclconvertParams: 
+    binary: "bin/bcl-convert"
+    params: "--force --sample-name-column-enabled true --create-fastq-for-index-reads true --fastq-gzip-compression-level 9"
     threads: 256
     xtra: ""
 

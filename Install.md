@@ -73,9 +73,43 @@ ulimit -s unlimited
 If you're using some other shell, you'll need to translate these commands as necessary. Odds are, if you are using another shell (on purpose), then this won't be an issue for you.
 
 
-### Conda install (recommended)
+### Mamba install (recommended)
 
-Conda is by far the easiest way to go about configuring Tapir. <br><br>
+Install Mamba
+
+### Conda install (much slower, but works)
+*Skip this step if Conda is already installed*
+Download it!
+```
+cd ~
+mkdir -p src/Mamba
+cd src/Mamba
+wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh
+```
+And install it!
+```
+bash Mambaforge-Linux-x86_64.sh
+```
+and type `yes` when asked if you wish to initialize mamba.
+
+Create an environment
+```
+mamba create -n tapir
+```
+And type `y` when prompted
+**restart your shell**
+eg, log out, then log back in
+
+And now load all of the packages/libraries used by tapir:
+```
+mamba env update -n tapir --file PATH_TO_TAPIR/snakemakes/tapir.yaml
+```
+where PATH_TO_TAPIR is the, well, the path to this program (`/mnt/disk0/Tapir` in the example).
+
+
+### Conda install (less recommended)
+Mamba is (largely seen as) a drop-in replacement for Conda; Conda is, well, slower and dumber. <br>
+Regardless, here are instructions for installing the Tapir envioronment in conda.
 *Skip this step if Conda is already installed*
 ```
 cd ~/
@@ -104,7 +138,7 @@ As of this writing, I still have yet to get Fastqc working outside of Conda (in 
 Tapir is largely self-contained. It is assumed that the following are already in your environment:
 
 - R
-  - tidyverse (scripts by Tapir)
+  - tidyverse and Hmisc (scripts by Tapir)
   - gplots (the following are required by GATK)
   - gsalib
   - reshape2
