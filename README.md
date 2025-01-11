@@ -15,7 +15,7 @@ Reporting <br>
 
 ## Install
 
-![Click here](install.md) for installation instructions.
+![Click here](Install.md) for installation instructions.
 
 ## Quick start
 
