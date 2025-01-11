@@ -173,10 +173,13 @@ TL;DR, bcl2fastq just "works" (on near any 64-bit Linux system), while bcl-conve
 <br><br>
 If a nice usage statement pops up, you're good to go. If not, consider either downloading and re-installing it [LINK](https://www.illumina.com/content/illumina-support/language-master/en/sequencing/sequencing_software/bcl-convert/downloads.html). Don't forget to **replace** the bcl-convert used by Tapir; ie, in `bin/`!
 <br><br>
-If you're lazy (and a bit lucky), instead of downloading bcl-convert, you can try and fix the version we provide-- it could just be missing a library or two. Try: <br><br>
+If you're lazy (and a bit lucky), instead of downloading and installing bcl-convert, you can try and fix the version we provide-- it could just be missing a library or two. Try: <br><br>
 `ldd bin/bcl-convert`
 <br><br>
-and fixing any broken links you see.
+and fixing any broken links you see (though if you're not running Centos/Rocky linux, this may be hard to do).
+<br><br>
+You may wonder *how* Tapir knows which of the two bcl conversion tools you plan on using... the answer lies in the (format of the) ![SampleSheet](examples/sample_sheets/README.md). TL;DR, the format of the sample sheet tells Tapir which conversion tool you're using.
+
 
 
 
