@@ -2,13 +2,14 @@
 
 Installation involves three steps, which are as follows:
 
--   [**Download:**](#download) Tapir is first downloaded (github and zenodo); it uses many big files, I strongly recommend using a fast local disk (SSD/NVMe is recommended)
--  [**Configuration:**](#configure-host-os) Tapir also requires (somewhat minimal) user configuration. This involves making an isolated environment (Conda), installing a few niche softwares (parallel and fastqc), as well as modifying your bashrc.
-  - Tapir can be configured to run using a conda environment
+-  [**Download:**](#download) Tapir is first downloaded (github and zenodo); it uses many big files, I strongly recommend using a fast local disk (SSD/NVMe is recommended)
+-  [**Configuration:**](#configure-host-os) Tapir also requires (somewhat minimal) user configuration. This involves making an isolated environment (Conda or Mamba), installing a few niche softwares (parallel and fastqc), as well as modifying your bashrc.
   - Tapir can also be run natively
     -  A handful of "extra" applications may not work (namely, Fastqc)
     -  And a handful more are assumed to already be installed (samtools, bcftools, bwa).
--  **Customization** <br>Tapir also supports performance tweaks; this includes references to local (fast) storage devices (NVME recommended; likely different than found in the `Install`.) as well as load-balancing (increasing/decreasing the number of threads used by various routines)
+-  **Customization** <br>Tapir also supports performance tweaks; this includes using local (fast) storage devices (NVME recommended; likely different than found in the `Install`.) as well as load-balancing (increasing/decreasing the number of threads used by various routines)
+-  [**NextSeq support**](#nextseq support) Tapir supports Illumina's NextSeq (beta)
+  - bcl-convert *may* have to be (re)installed. See notes below.
 
 ## Download
 
@@ -141,7 +142,7 @@ As of this writing, I still have yet to get Fastqc working outside of Conda (in 
 Tapir is largely self-contained. It is assumed that the following are already in your environment:
 
 - R
-  - tidyverse and Hmisc (scripts by Tapir)
+  - tidyverse and Hmisc (required by Tapir)
   - gplots (the following are required by GATK)
   - gsalib
   - reshape2
@@ -161,5 +162,22 @@ Tapir is largely self-contained. It is assumed that the following are already in
   - only necessary for DeepVariant (which we don't, in practice, use)
 
 <br><br>
-Note, it is quite likely that any recent version of bwa, samtools and bcftools will work, and these are all very common tools.
+Note, it is quite likely that any recent version of bwa, samtools and bcftools will work, and these are all very common tools. Do note the version numbers, however.
+
+### NextSeq support
+
+In practice, Tapir supports either bcl2fastq (Mi- Hi- Nova- and *some* Next-Seq instruments) or bcl-convert ("all" instruments, according to [Illumina](https://www.illumina.com/products/by-type/informatics-products/basespace-sequence-hub/apps/bcl-convert.html)). <br>
+However, bcl2fastq can be readily made into a (shareable) static binary, while bcl-convert is a dynamic executable (it depends on the right libraries being available in the right locations). <br>
+TL;DR, bcl2fastq just "works" (on near any 64-bit Linux system), while bcl-convert may have to be re-installed or configured. If you wish to use bcl-convert, first test the version provided by Tapir: <br>
+`bin/bcl-convert --help`
+<br>
+If a nice usage statement pops up, you're good to go. If not, consider either downloading and re-installing it [LINK](https://www.illumina.com/content/illumina-support/language-master/en/sequencing/sequencing_software/bcl-convert/downloads.html). Don't forget to **replace** the bcl-convert used by Tapir; ie, in `bin/`!
+<br>
+If you're lazy (and a bit lucky), instead of downloading bcl-convert, you can try and fix the version we provide-- it could just be missing a library or two. Try: <br>
+`ldd bin/bcl-convert`
+<br>
+and fixing any broken links you see.
+
+
+
 
