@@ -72,8 +72,13 @@ ulimit -s unlimited
 <br><br>
 If you're using some other shell, you'll need to translate these commands as necessary. Odds are, if you are using another shell (on purpose), then this won't be an issue for you.
 
+## Virtual environment
 
-### Mamba install (recommended)
+Tapir can be run as a virtual environment; we use conda for our virtualization, and Mamba to download our dependencies.
+<br>
+Conda can also be used to load the environment, but conda's dependency manager is a big buggy. (ie, it sometimes works, sometimes doesn't.)
+
+### Tapir using Mamba (recommended)
 
 Install Mamba <br><br>
 *Skip this step if Conda is already installed*
@@ -105,7 +110,7 @@ mamba env update -n tapir --file PATH_TO_TAPIR/snakemakes/tapir.yaml
 where PATH_TO_TAPIR is the, well, the path to this program (`/mnt/disk0/Tapir` in the example).
 
 
-### Conda install (less recommended)
+### Tapir using Conda (less recommended)
 Mamba is (largely seen as) a drop-in replacement for Conda; Conda is, well, slower and dumber. <br>
 Regardless, here are instructions for installing the Tapir envioronment in conda.
 *Skip this step if Conda is already installed*

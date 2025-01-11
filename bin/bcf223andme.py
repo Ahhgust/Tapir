@@ -14,7 +14,7 @@ import argparse
 import gzip
 
 EPSILON=0.0001
-
+VERSION=0.001
 
 def getInfo(infoStr, query, cast=str):
     """
