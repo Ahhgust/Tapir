@@ -9,7 +9,7 @@ Installation involves three steps, which are as follows:
     -  And a handful more are assumed to already be installed (samtools, bcftools, bwa).
 -  **Customization** <br>Tapir also supports performance tweaks; this includes using local (fast) storage devices (NVME recommended; likely different than found in the `Install`.) as well as load-balancing (increasing/decreasing the number of threads used by various routines)
 -  [**NextSeq support**](#nextseq-support) Tapir supports Illumina's NextSeq (beta)
-  - bcl-convert *may* have to be (re)installed. See notes below.
+    - bcl-convert *may* have to be (re)installed. See notes below.
 
 ## Download
 
