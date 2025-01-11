@@ -168,7 +168,7 @@ Note, it is quite likely that any recent version of bwa, samtools and bcftools w
 
 In practice, Tapir supports either bcl2fastq (Mi- Hi- Nova- and *some* Next-Seq instruments) or bcl-convert ("all" instruments, according to [Illumina](https://www.illumina.com/products/by-type/informatics-products/basespace-sequence-hub/apps/bcl-convert.html)). 
 However, bcl2fastq can be readily made into a (shareable) static binary, while bcl-convert is a dynamic executable (it depends on the right libraries being available in the right locations). 
-TL;DR, bcl2fastq just "works" (on near any 64-bit Linux system), while bcl-convert may have to be re-installed or configured. If you wish to use bcl-convert, first test the version provided by Tapir: <br><br>
+TL;DR, bcl2fastq just "works" (on near any x86_64 Linux system), while bcl-convert may have to be re-installed or configured. If you wish to use bcl-convert, first test the version provided by Tapir: <br><br>
 `bin/bcl-convert --help`
 <br><br>
 If a nice usage statement pops up, you're good to go. If not, consider either downloading and re-installing it [LINK](https://www.illumina.com/content/illumina-support/language-master/en/sequencing/sequencing_software/bcl-convert/downloads.html). Don't forget to **replace** the bcl-convert used by Tapir; ie, in `bin/`!
