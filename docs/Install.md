@@ -178,7 +178,7 @@ If you're lazy (and a bit lucky), instead of downloading and installing bcl-conv
 <br><br>
 and fixing any broken links you see (though if you're not running Centos/Rocky linux, this may be hard to do).
 <br><br>
-You may wonder *how* Tapir knows which of the two bcl conversion tools you plan on using... the answer lies in the (format of the) ![SampleSheet](examples/sample_sheets/README.md). TL;DR, the format of the sample sheet tells Tapir which conversion tool you're using.
+You may wonder *how* Tapir knows which of the two bcl conversion tools you plan on using... the answer lies in the (format of the) ![SampleSheet](../examples/sample_sheets/README.md). TL;DR, the format of the sample sheet tells Tapir which conversion tool you're using.
 
 
 
