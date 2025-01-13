@@ -50,7 +50,7 @@
 
 - **Call rate**. For some genotyping panel; what fraction of sites were called (genotyped, not as missing data)?
 
-- **Coverage**. The mean read depth; e.g., `5.2x`. Often a misused term; we mean it to be the "redundancy of coverage" of Lander and Waterman [External link](https://doi.org/10.1016/0888-7543(88)90007-9). Note that Lander and Waterman's equation to estimate coverage does NOT apply well to shotgun WGS. In practice, we take coverage as the mean read depth estimated at 10k autosomal sites selected from Illumina's GSA panel. Only reads that pass QC are considered.
+- **Coverage**. How many times (on average) do we measure some site? Denoted as `x`, for example: 5.2`x`. Coverage is often a misused term; we mean it to be the "redundancy of coverage" of Lander and Waterman [External link](https://doi.org/10.1016/0888-7543(88)90007-9). Note that Lander and Waterman's equation to estimate coverage does NOT apply well to shotgun WGS. In practice, we take coverage as the **mean read depth** estimated at 10k autosomal sites selected from Illumina's GSA panel. Only reads that pass QC are considered.
 
 - **Depth**. At a site, how many times was it measured? Only reads that pass QC are considered. If reads are selected at random from a person's genome, per Lander and Waterman, Depth is Poisson distributed with lambda=Coverage.
 
