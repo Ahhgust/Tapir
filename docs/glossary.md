@@ -11,7 +11,7 @@
 
 - **bcl**. Binary base call. Illumina's raw file format. See [External link](https://www.illumina.com/informatics/sequencing-data-analysis/sequence-file-formats.html)
 
-- **fastq**. FASTA [Wikipedia article](https://en.wikipedia.org/wiki/FASTA_format) with quality. A text file format (often compressed with gzip). See [Wikipedia article](https://en.wikipedia.org/wiki/FASTQ_format)
+- **fastq**. FASTA ([Wikipedia article](https://en.wikipedia.org/wiki/FASTA_format)) with quality. A text file format (often compressed with gzip). See [Wikipedia article](https://en.wikipedia.org/wiki/FASTQ_format)
 
 - **sam**. an uncompressed version of the bam file format. Good people never store data in sam format.
 
