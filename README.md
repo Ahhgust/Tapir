@@ -10,14 +10,10 @@ Reporting <br>
 
 ## Table of contents
 
--  [**Install**](#install) Installation and configuration instuctrions.
--  [**Quick start**](#quick-start) Once installed, use Tapir
+-  ![Click here](Install.md) for installation instructions.
+-  ![Click here](QuickStart.md) for a quick start.
+-  [**Less quick start](#less-quick-start) Use Tapir (but with a bit more understanding of what's happening)
 
-## Install
-
-![Click here](Install.md) for installation instructions.
-
-## Quick start
 
 
 
