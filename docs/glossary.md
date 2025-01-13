@@ -2,15 +2,15 @@
 
 ## Genomic file formats
 
--- **bam**. Binary alignment map. A compressed (binary) fastq record with alignment information. See [Wikipedia article](https://en.wikipedia.org/wiki/SAM_(file_format))
+- **bam**. Binary alignment map. A compressed (binary) fastq record with alignment information. See [Wikipedia article](https://en.wikipedia.org/wiki/SAM_(file_format))
 
--- **bcl**. Binary base call. Illumina's raw file format. See [External link](https://www.illumina.com/informatics/sequencing-data-analysis/sequence-file-formats.html)
+- **bcl**. Binary base call. Illumina's raw file format. See [External link](https://www.illumina.com/informatics/sequencing-data-analysis/sequence-file-formats.html)
 
--- **fastq**. FASTA [Wikipedia articile](https://en.wikipedia.org/wiki/FASTA_format) with quality. A text file format (often compressed with gzip). See [Wikipedia article](https://en.wikipedia.org/wiki/FASTQ_format)
+- **fastq**. FASTA [Wikipedia articile](https://en.wikipedia.org/wiki/FASTA_format) with quality. A text file format (often compressed with gzip). See [Wikipedia article](https://en.wikipedia.org/wiki/FASTQ_format)
 
--- **sam**. an uncompressed version of the bam file format. Good people never store data in sam format.
+- **sam**. an uncompressed version of the bam file format. Good people never store data in sam format.
 
--- **vcf**. Variant call format; often compressed as vcf.gz or bcf. A file format commonly used to describe SNVs. See [Wikipedia article](https://en.wikipedia.org/wiki/Variant_Call_Format).
+- **vcf**. Variant call format; often compressed as vcf.gz or bcf. A file format commonly used to describe SNVs. See [Wikipedia article](https://en.wikipedia.org/wiki/Variant_Call_Format).
 
 
 ## List of tools
@@ -31,13 +31,13 @@
 
 - **glimpse2**. Tool for estimating genotypes from low-coverage whole genome sequencing; Glimpse2 considers LD (and allele frequency, as a prior) when estimating genotypes; Glimpse2 is an imputation method (it is also a genotype refinement method). Available [here](https://github.com/odelaneau/GLIMPSE)
 
--- **samtools** Common tools for working with SAM, BAM, and CRAM file formats; Tools include flagstat (produces summary statistics) and view (file format conversion). Available [here](https://github.com/samtools)
+- **samtools** Common tools for working with SAM, BAM, and CRAM file formats; Tools include flagstat (produces summary statistics) and view (file format conversion). Available [here](https://github.com/samtools)
 
 ### Custom scripts
 
 - **samstats** Custom script that provides information on segregating sites (selected from the GSA), including read depth and breadth (of coverage), duplication rates and template lengths
 
--- **estimateXPloidy** A simple tool to estimate the ploidy of the X chromosome. BCFtools and GLIMPSE support haploid and diploid calling models; this uses the number of reads on the X vs an autosome (chromosome 7) to estimate the ploidy of the X chromosome (roughly speaking, the biological sex of the sample). In (very) low coverage settings, structural and copy-number variants can affect this tool.
+- **estimateXPloidy** A simple tool to estimate the ploidy of the X chromosome. BCFtools and GLIMPSE support haploid and diploid calling models; this uses the number of reads on the X vs an autosome (chromosome 7) to estimate the ploidy of the X chromosome (roughly speaking, the biological sex of the sample). In (very) low coverage settings, structural and copy-number variants can affect this tool.
 
 
 ## Key terminology
