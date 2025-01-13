@@ -10,8 +10,8 @@ Reporting <br>
 
 ## Table of contents
 
--  ![Click here](Install.md) for installation instructions.
--  ![Click here](QuickStart.md) for a quick start.
+-  ![Click here](docs/Install.md) for installation instructions.
+-  ![Click here](docs/QuickStart.md) for a quick start.
 -  [**Less quick start](#less-quick-start) Use Tapir (but with a bit more understanding of what's happening)
 
 
