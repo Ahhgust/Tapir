@@ -1,12 +1,17 @@
 # Glossary
 
+-  [**Genomic file formats**](#genomic-file-formats). Tapir uses/creates lots of files. Let's learn about the file formats!
+-  [**List of tools**](#list-of-tools) Tapir also uses a lot of tools. What are they? Where do they come from?
+-  [**Key terminology**](#key-terminology) Tapir uses a lot of weird words. SNP? SNV? What do these words mean?
+
+
 ## Genomic file formats
 
 - **bam**. Binary alignment map. A compressed (binary) fastq record with alignment information. See [Wikipedia article](https://en.wikipedia.org/wiki/SAM_(file_format))
 
 - **bcl**. Binary base call. Illumina's raw file format. See [External link](https://www.illumina.com/informatics/sequencing-data-analysis/sequence-file-formats.html)
 
-- **fastq**. FASTA [Wikipedia articile](https://en.wikipedia.org/wiki/FASTA_format) with quality. A text file format (often compressed with gzip). See [Wikipedia article](https://en.wikipedia.org/wiki/FASTQ_format)
+- **fastq**. FASTA [Wikipedia article](https://en.wikipedia.org/wiki/FASTA_format) with quality. A text file format (often compressed with gzip). See [Wikipedia article](https://en.wikipedia.org/wiki/FASTQ_format)
 
 - **sam**. an uncompressed version of the bam file format. Good people never store data in sam format.
 
