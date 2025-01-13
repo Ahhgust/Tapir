@@ -64,6 +64,8 @@
 
 - **Mixture Proportion**. Ratio of the amount of DNA from each contributor included in the total sample that was used for the library preparation process. When estimated using Demixtify [External link](https://doi.org/10.1016/j.fsigen.2023.102980), the mixture proportion is the fraction of reads estimated to come from the minor contributor (2-person mixture scenarios only).
 
+- **Quality**. Quality is commonly used to describe a base call (in a read, how likely is to be called correctly?), an alignment (ostensibly, what is the probability that the read is correctly mapped. Note that this *is not* what mapping quality really is), and a genotype (the likelihood associated with a proposed genotype; often given as a likelihood ratio). Quality is often encoded on a Phred scale [External link](https://en.wikipedia.org/wiki/Phred_quality_score). In most cases, large(r) quality is desired (ie, bigger is better). Notable exceptions include the PL tag in the VCF file format (bigger is... worse?).
+
 - **Read**. The raw sequence data produced by a sequencing instrument, generated as a result of detection of the sequence of nucleotides in a DNA strand and the translation of that information into digital sequence data.
 
 - **SNP**. Single/Simple/Short nucleotide polymorphism. A SNV with a minor allele frequency >=1%. One of the major aims of the 1000 Genomes Project was to assay ~95% of all SNPs.
@@ -72,4 +74,4 @@
 
 - **Template**. Of shotgun sequencing; the (original) thing you sequenced. Ie, the part of a read that neglects adapters and other bits added to enable sequencing. DNA degradation can shorten template lengths.
 
-- **Variant**. A place in the genome where the sample differs from the reference genome.
+- **Variant**. A place in the genome where the/a sample differs from the reference genome. Can refer to a location, or a location and an allele.
