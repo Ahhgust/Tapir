@@ -1,0 +1,30 @@
+# Sample QC
+
+For definitions, file formats and specifics on the software packages used by Tapir, please see the [Glossary](Glossary.md).
+
+### Alignment statistics
+Tapir runs `samtools flagstat` [External link](http://www.htslib.org/doc/samtools-flagstat.html). <br>
+Of note, `samtools flagstat` reports both the raw number of reads and the *number* of properly paired reads; both can be informative on sample performance. Note that having a low percentage/number of properly paired reads can be sympomatic of many things; included in which are bacterial contamination and adapter dimers (adapter dimers can generate fastq records that are blank; blanks are not properly paired).
+
+### Site-level statistics
+One of the most important questions of a sample is how much data do I have? Flagstat information does not (readily) provide that (what if your reads are short? or your reads are long and your templates are short?). Tapir includes custom software to estimate the breadth and depth of coverage, as well as the number/rate of duplicates.
+
+### Mixture status
+Step 2 of tapir (genotyping) only applies to single-source samples. We use Demixtify to estimate the mixture proportion and the number of contributors (NoC). Although Demixtify only supports 1 or 2 contributor scenarios, in practice more than 2 contributors are identified as mixtures as well. <br>
+Of note, genomic techniques can be very sensitive; Demixtify can detect mixtures below 1%. In practice, values below 1% are unlikely to be true mixtures (perhaps environmental DNAs, and/or bacterial DNAs are to blame). We recommend a three-tiered interpretation scheme:
+- The mixture hypothesis does not have significant support
+  - Treat as single source
+- The mixture hypothesis has significant support, but the mixture proportion is quite small
+  - Treat as single source.
+  - If less than 1%, low-level contamination may be to blame
+  - If less than ~5-10%, genotyping will be large unaffected, but the mixture hypothesis may be realistic.
+- The mixture hypothesis has significant support, but the mixture proportion is NOT small
+  - Stop. Collaborate. And listen.
+  - Really, figure out what happened.
+
+### Additional reports
+
+- Tapir creates a FastQC report. FastQC looks for likely problems in your Fastq records. Note that Tapir only uses aligned/mapped reads to inform Fastqc. Please see the FastQC website [External link](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) for instructions on how to interpret this report. I would note, that (IMO) some of the "problems" reported by FastQC (e.g., over-represented sequences) matter for *some* genomic applications, but likely matter very little for characterizing well-described SNPs/SNVs.
+- Tapir also creates a BQSR report. As a reminder BQSR (base quality score recalibration) empirically adjusts base quality scores; base qualities tend to be a bit "optimistic", and cannot account for PCR error/DNA damage; likewise, poor pre-phasing results tend to lead to (highly) biased base quality. In low-pass scenarios, quality really matters.  Many of these issues are fixed by BQSR. Please see GATK's BQSR manual [External link](https://gatk.broadinstitute.org/hc/en-us/articles/360035890531-Base-Quality-Score-Recalibration-BQSR) for more information.
+
+
