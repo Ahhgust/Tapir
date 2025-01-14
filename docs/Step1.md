@@ -1,6 +1,6 @@
 ![Step1](../images/Stage1.jpg)
 
-Legend: Items in teal are for *interpretation*. Items in dark blue are programs and tools. The final result (bam) is depicted in green.
+Items in teal are for *interpretation*. Items in dark blue are programs and tools. The final result (bam) is depicted in green.
 
 # Step 1
 ## Quick references
@@ -8,12 +8,13 @@ Legend: Items in teal are for *interpretation*. Items in dark blue are programs 
 
 ## The flow
 In words:
--  Raw BCL data (Illumina sequencer) are demultiplex (bcl converted to fastq)  by
+-  Raw BCL data (Illumina sequencer) are demultiplex (converted to fastq) by
    -  bcl2fastq (MiSeq, NovaSeq, HiSeq...) **OR**
    -  bcl-convert (NextSeq, ...)
       -  Which is chosen depends on the format of the SampleSheet.
--  In either case, Tapir will demultiple both samples (per lane) **AND**
--  Indexes (ie, indexes without an accompanying sample)
+-  In either case, Tapir will demultiple
+   -  Samples (per lane) **AND**
+   -  Indexes (ie, indexes without an accompanying sample; useful for detecting carryover)
 -  All fastqs are aligned using BWA mem.
    - One bam per lane per sample/index
 -  A per-sample BAM is created
