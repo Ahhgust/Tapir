@@ -1,4 +1,4 @@
-![Step1](../images/Stage1.png)
+![Step1](../images/Stage1.jpg)
 
 Legend: Items in teal are for *interpretation*. Items in dark blue are programs and tools. The final result (bam) is depicted in green.
 
