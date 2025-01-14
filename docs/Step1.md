@@ -1,6 +1,6 @@
 ![Step1](../images/Stage1.jpg)
 
-Items in <pre><span color="#00778b;">teal</span></pre> are for *interpretation*. Items in dark blue are programs and tools. The final result (bam) is depicted in green.
+Items in teal are for *user-interpretation*. Items in dark blue are programs and tools. The final result (bam) is depicted in green.
 
 # Step 1
 ## Quick references
