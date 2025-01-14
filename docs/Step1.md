@@ -1,6 +1,6 @@
 ![Step1](../images/Stage1.jpg)
 
-Items in teal are for *interpretation*. Items in dark blue are programs and tools. The final result (bam) is depicted in green.
+Items in <span color="#00778b;">teal</span> are for *interpretation*. Items in dark blue are programs and tools. The final result (bam) is depicted in green.
 
 # Step 1
 ## Quick references
@@ -33,3 +33,5 @@ In words:
       -  a summary
 -  The final bam has been left-aligned around indels (.la), duplicates have been marked (.md), and BQSR has been applied (.bqsr).
 
+## How to
+Tapir is a snakemake workflow
