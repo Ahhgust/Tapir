@@ -50,7 +50,7 @@ echo $?
 ```
 
 Which tells snakemake to evaluate all of the information, and evaluate what needs to be run. Dry-runs are "chatty", so it can be a bit hard to tell if errors or present (or not, depending on the error). The error code is also printed `echo $?`; the last line *should* say 0. If not, you may have mis-specified something.
-Parameters (ie, things that start with a "-" of note:
+Parameters (ie, things that start with a "-") of note:
 -  \-s
    -  Which snakemake script are we calling?
 -  \-c
@@ -69,6 +69,7 @@ Parameters (ie, things that start with a "-" of note:
    - Optional 
       - Samplesheet=
          -  Provide a path (and filename) for a different sample sheet.
+	    -  This can be useful if you messed up the sample sheet the first time.
 	 -  By default, SampleSheet.csv (in the BCL dir) is used.
 
 
