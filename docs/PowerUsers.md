@@ -11,5 +11,14 @@ In practice, Tapir simply runs a bunch of UNIX command in a particular order. By
 | sambamba | markdup |  | Functionally equivalent to Picard’s MarkDuplicates tool, but much faster |
 | gatk   |  LeftAlignIndels |  | Also serves to merge BAMs|
 |        | BaseRecalibrator |  | Masks SNPs/Indels and positions from Woerner et al 2022. This tool is run twice; once to create the recalibration tables, and again to plot the post-BQSR calibration (AnalyzeCovariates) |
+|   | ApplyBQSR | |
+|   | AnalyzeCovariates | |
+|   | LiftoverVCF | --RECOVER_SWAPPED_REF_ALT true -WRITE_ORIGINAL_ALLELES false --WRITE_ORIGINAL_POSITION true --WARN_ON_MISSING_CONTIG true | |
+|bcftools | mpileup | -d 512 -q 20 -Q 10 -I -E -a 'FORMAT/DP,FORMAT/AD,FORMAT/SP' | 512 max read depth, 20 min mapping quality, 10 min base quality, additional tags (-a, listed) |
+|  | call | -Am -C alleles -P 0. | keep alt alleles, multiallelic calling, limit to the alleles listed, disable the prior. |
+
+
+
+
 
 
