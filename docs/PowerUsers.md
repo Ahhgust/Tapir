@@ -10,4 +10,6 @@ In practice, Tapir simply runs a bunch of UNIX command in a particular order. By
 | bwa  | mem | -M | -M ensure compatibility with downstream tools (e.g., GATK) |
 | sambamba | markdup |  | Functionally equivalent to Picard’s MarkDuplicates tool, but much faster |
 | gatk   |  LeftAlignIndels |  | Also serves to merge BAMs|
+|        | BaseRecalibrator |  | Masks SNPs/Indels and positions from Woerner et al 2022. This tool is run twice; once to create the recalibration tables, and again to plot the post-BQSR calibration (AnalyzeCovariates) |
+
 
