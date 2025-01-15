@@ -72,6 +72,29 @@ Parameters (ie, things that start with a "-" of note:
 	 -  By default, SampleSheet.csv (in the BCL dir) is used.
 
 
+The dry-run will also parse the provided sample sheet; there are a lot of ways to mess up a sample sheet! Please see the writeup:
+<br>
+![here](../examples/sample_sheets/README.md) for a reminder of how what the sample sheet *should* look like.
+<br>
+
+If your dry-run is successful, let's run Tapir for real. I recommend:
+
+```
+nohup snakemake -s /eva/codebase/snakemakes/bcl2bam.smk  -c256 --config Bcldir=250103_A01324_0120_BHWGY2DMXY Outdir=/eva/datums/cooked/NovaSeq001/2025/WGSValidation Experiment=Sensitivity &
+```
+
+Which runs the command in the background (trailing &) and lets you exit/logout of the shell without aborting the call (nohup; no hardware interrupt)
+
+<br>
+Note that when Step 1 completes, that would be a good time to evaluate both sample-level QC metrics; see ![here](./QC.md) <br>
+As well, run-level metrics are of key importance.
+
+### Files made
+
+Step1 of Tapir takes a single run, and creates demultiplexed results; one for each sample. Additionally, "Offtargets" data are created; these correspond to fastqs records that are supported by your library prep method, but you *shouldn't* see any results for. Because demultiplexing is imperfect (really, we observe reads with error), some (tiny amount) of data may be present, anyways.
+
+/eva/datums/cooked/NovaSeq001/2025/WGSValidation
+
 ## TMI
-Snakemake workflows are best implemented without arguments (ie, things that change how the programs are run). Tapir does not entirely adhere to this philosphy. Specifically, in Stage 1, a traditional Snakemake workflow would write to the BCL directory (to preserve state). That is a bad idea; the original data should be treated as a WORM (write once, read many times); that way it can be easily backed up as soon as it comes off the instrument (and MD5s and whatnot will match).
+Snakemake workflows are best implemented without arguments (ie, things that change how the programs are run). Tapir does not entirely adhere to this philosphy. Specifically, in Step 1, a traditional Snakemake workflow would write to the BCL directory (to preserve state). That is a bad idea; the original data should be treated as a WORM (write once, read many times); that way it can be easily backed up as soon as it comes off the instrument (and MD5s and whatnot will match).
 

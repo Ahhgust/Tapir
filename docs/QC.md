@@ -1,6 +1,8 @@
-# Sample QC
+# QC
 
 For definitions, file formats and specifics on the software packages used by Tapir, please see the [Glossary](Glossary.md).
+
+## Sample QC
 
 ### Alignment statistics
 Tapir runs `samtools flagstat` [External link](http://www.htslib.org/doc/samtools-flagstat.html). <br>
@@ -28,3 +30,24 @@ Of note, genomic techniques can be very sensitive; Demixtify can detect mixtures
 - Tapir also creates a BQSR report. As a reminder BQSR (base quality score recalibration) empirically adjusts base quality scores; base qualities tend to be a bit "optimistic", and cannot account for PCR error/DNA damage; likewise, poor pre-phasing results tend to lead to (highly) biased base quality. In low-pass scenarios, quality really matters.  Many of these issues are fixed by BQSR. Please see GATK's BQSR manual [External link](https://gatk.broadinstitute.org/hc/en-us/articles/360035890531-Base-Quality-Score-Recalibration-BQSR) for more information.
 
 
+## Higher-order QC
+
+Errors and the like can occur on many levels; the most basic is at the level of the sample, and at higher levels (e.g., the level of the run).
+-  Run-level QC
+   -  See:
+      -  [External link](https://knowledge.illumina.com/library-preparation/general/library-preparation-general-troubleshooting-list/000001911)
+      -  [External link](https://knowledge.illumina.com/library-preparation/general/library-preparation-general-reference_material-list/000003874)
+   -  We recommend using Illumina's (on-site) metrics on the run. In particular, we found the following metrics to be important:
+      -  Pre/Post phasing and/or Base misincorporation rates
+      -  % of clusters >= Q30
+      -  % of clusters passing filters
+         - Really, the *pair* of these two values, in a scatterplot.
+      -  % of clusters occupied. 
+-  Offtargets (Tapir; generated per run)
+   -  At a high level, this can be something simple and common; you used the wrong sample sheet, or you told Tapir that you expect to see UDI25, but instead you used UDI 23. We call these "Offtarget" results.
+       -  We recommend using *all* sample indexes when demultiplexing.
+       -  See the "Offtargets" results
+          -  Should the coverage be too high, this can indicate a problem with the sample sheet.
+	  -  We recommend evaluating both the flagstat and samstat.cov files
+-  Undetermined (Tapir, generated per run)
+   -  These results correspond to fastq records that failed to demultiplex. Poor run quality may cause excessive rates.
