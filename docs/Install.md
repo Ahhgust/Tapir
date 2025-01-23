@@ -14,6 +14,9 @@ Installation involves three steps, which are as follows:
 ## Download
 
 Tapir uses many large files. Because I'm ~~cheap~~ a fan of reproducible science, the largest of these files are stored on zenodo.
+In addition, make sure your \*nix machine has the following installed:
+- git, gedit
+
 
 ### Installation location
 
@@ -28,7 +31,8 @@ cd Tapir
 Download the relevant files from Zenodo:
 ```
 # Imputation panel; this is big
-wget https://zenodo.org/records/14171544/files/tapir_imputation.tar?download=1 && tar -xf tapir_imputation.tar && rm tapir_imputation.tar
+wget -O tapir_imputation.tar https://zenodo.org/records/14171544/files/tapir_imputation.tar?download=1 && tar -xf tapir_imputation.tar && rm tapir_imputation.tar
+
 # General genomic resources; including the reference genome and various liftOver files
 
 # And last, source-code for relevant packages. Includes deepvariant (sif) and GATK (jars)
@@ -47,6 +51,7 @@ chmod -R 775 /mnt/disk0/Tapir
 
 Tools like GATK and Sambamba make a ridiculous number of files. Likewise, it is nice to keep your command history for a good chunk of time and to handle concurrency. <br><br>
 Modify your .bashrc to contain:
+(note some of these variables may be defined already; if so, just redefine them)
 
 ```
 HISTCONTROL=ignoreboth
@@ -82,13 +87,14 @@ Conda can also be used to load the environment, but conda's dependency manager i
 ### Tapir using Mamba (recommended)
 
 Install Mamba <br><br>
-*Skip this step if Conda is already installed*
+*Skip this step if Conda is already installed* <br>
 Download Mamba!
 ```
 cd ~
 mkdir -p src/Mamba
 cd src/Mamba
-wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh
+#wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh
+wget https://github.com/conda-forge/miniforge/releases/download/24.11.2-1/Miniforge3-24.11.2-1-Linux-x86_64.sh
 ```
 And install it!
 ```
@@ -100,11 +106,18 @@ Create an environment
 ```
 mamba create -n tapir
 ```
-And type `y` when prompted
+And type `y` or `yes` when prompted
 **restart your shell**
 eg, log out, then log back in
 
-And now load all of the packages/libraries used by tapir:
+And now load all of the packages/libraries used by tapir.
+We provide an *example* environment:
+Please (g)edit `tapir.yaml.template.txt`
+and save it
+```
+mv tapir.yaml.template.txt tapir.yml
+```
+
 ```
 mamba env update -n tapir --file PATH_TO_TAPIR/snakemakes/tapir.yaml
 ```

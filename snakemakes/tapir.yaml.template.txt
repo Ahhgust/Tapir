@@ -47,7 +47,7 @@ dependencies:
 - conda-forge::pyvcf=0.6.8
 
 # additional Tapir dependencies
-- conda-forge::snakemake>=7.18
+- bioconda::snakemake>=7.18
 - conda-forge::parallel>=0.12
 - bioconda::bcftools>=1.15
 - bioconda::samtools>=1.7
