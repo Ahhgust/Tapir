@@ -41,7 +41,7 @@ Also note, we will add the above to our .bashrc as well...
 
 Let's `cd` into the right location:
 ```
-cd $TAPIR
+cd /mnt/disk0 # note the git clone command will add the Tapir directory
 ```
 
 And start downloading the oh so many files that Tapir uses. <br>
@@ -51,6 +51,16 @@ Genomic files are big; many genomic computations are IO bound (ie, the speed of 
 git clone https://github.com/Ahhgust/Tapir.git
 cd Tapir
 ```
+<br>
+(optional)
+You can also download some example FASTQ files:
+(from the Tapir directory)
+```
+cd examples/fastq_example
+wget -O GMWOF5428715_S89_L001_R1_001.fastq.gz 'https://www.dropbox.com/s/qxa8p900k1ct53a/GMWOF5428715_S89_L001_R1_001.fastq.gz?dl=1'
+wget -O GMWOF5428715_S89_L001_R2_001.fastq.gz 'https://www.dropbox.com/s/qxa8p900k1ct53a/GMWOF5428715_S89_L001_R2_001.fastq.gz?dl=1'
+```
+
 <br><br>
 
 Download the relevant files from Zenodo:
@@ -63,12 +73,10 @@ wget -O tapir_imputation.tar https://zenodo.org/records/14171544/files/tapir_imp
 # And last, source-code for relevant packages. Includes deepvariant (sif) and GATK (jars)
 
 ```
-And place/mv ```Tapir``` to some centeral location and set the permissions
+And set the permissions <br>
 E.G., if you have a nice fast solid state drive mounted to /mnt/disk0/, try
 
 ```
-cd ..
-mv -i Tapir /mnt/disk0/
 chmod -R 775 /mnt/disk0/Tapir
 ```
 
@@ -183,8 +191,6 @@ Now, let's set up your environment:
 ```
 conda env create --name tapir --file $TAPIR/snakemakes/tapir.yml
 ```
-where PATH_TO_TAPIR is the, well, the path to this program (`/mnt/disk0/Tapir` in the example).
-<br>
 Conda sometimes fails to solve the dependencies. That's one reason to use mamba instead...
 
 
@@ -210,7 +216,7 @@ Tapir is largely self-contained. It is assumed that the following are already in
 - Fastqc
 - Pysam
 - GNU parallel
-- singularity (optional)
+- singularity (optional; only needed for DeepVariant)
   - version 3.8.7-1.el7
   - only necessary for DeepVariant (which we don't, in practice, use)
 
