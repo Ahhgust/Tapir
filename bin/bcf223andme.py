@@ -65,7 +65,7 @@ def probToOdds(val, eps=EPSILON):
 
 parser = argparse.ArgumentParser(
     prog=sys.argv[0],
-    description='This takes a (single sample) VCF (standard input ONLUY), and writes a "23 and me" genotype file. Best used when piped from bcftools',
+    description='This takes a (single sample) VCF (standard input ONLY), and writes a "23andme" genotype file. Best used when piped from bcftools',
     epilog='Use with:\nbcftools view -e \'INFO/OriginalContig!=CHROM\' ...\nfor VCFs that have been lifted over using GATK/Picard')
 
 AF_TAG='RAF' # for GLIMPSE2 only; used with the Bayes factor 
@@ -80,7 +80,7 @@ parser.add_argument('-q', '--min_quality', dest='Q', type=int, help="The minimum
 parser.add_argument('-p', '--min_posterior', dest='P', type=float, help="The minimum genotype posterior probability (taken as the max GQ value); use w/ GLIMPSE2", default=-1.)
 parser.add_argument('-b', '--min_bayes_factor', dest='B', type=float, help="The minimum Bayes factor (requires allele frequency estimates; taken as max posterior odds / corresponding genotype's prior odds); use w/ GLIMPSE2", default=-1.)
 parser.add_argument('-k', '--keep_indels', dest='K', action='store_true', help="Reports indels, as well as SNPs.")
-parser.add_argument('-B', '--bayes_factor_af_tag', dest='AF_TAG', type=str, help="Use w/ imputation solvers other than GLIMPSE2; what tag to use for the alternative allele frequency; defaults to RAF (glimpse default)", default=AF_TAG) 
+parser.add_argument('-B', '--bayes_factor_af_tag', dest='AF_TAG', type=str, help="Use w/ imputation solvers other than GLIMPSE2; what tag to use for the alternative allele frequency; defaults to RAF (glimpse default)", default=AF_TAG)
 
 
 

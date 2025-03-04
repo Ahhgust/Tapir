@@ -1,7 +1,15 @@
 import glob, os, sys, re, time, gzip
 import GenomixHelper
 
-configfile: os.path.join(workflow.current_basedir, "config_v2_1.yaml")
+# Changelog:
+# added support for only emitting SNPs (as opposed to SNVs).
+
+# current_basedir returns the path of this snakemake script
+# bin/ and resources/ are in sibling directories; refer to them relative to ROOT
+ROOT=os.path.abspath(  os.path.join(workflow.current_basedir, ".."))
+
+configfile: os.path.join(ROOT, "configs", "config_v_2_standard.yaml")
+
 
 GX= GenomixHelper.GenomixHelper(workflow.current_basedir, config)
 
@@ -58,22 +66,10 @@ def listBams(wildcards):
     return bams
 
 
-module bcl2bam:
-    snakefile: 
-        "bcl2bam.smk"
-    config: config
-#TODO:
-# split off the summary stats routines into their own snakemake     
-# TODO: 
-# make summary statistics of the merged bam.
-#use rule make_bam_samstats from bcl2bam as bcl2bam_make_bam_samstats
-
 
 print("Processing: ", sampleName, suffix)
 
-# current_basedir returns the path of this snakemake script
-# bin/ and resources/ are in sibling directories; refer to them relative to ROOT
-ROOT=os.path.abspath(  os.path.join(workflow.current_basedir, ".."))
+
 
 print("Path: ", ROOT)
 
@@ -84,18 +80,20 @@ wildcard_constraints:
 rule call_bcftools:
     input:
         bamGenerator,
-        expand("Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.23andme.tsv.gz", samplename=sampleName, suffix=suffix, caller=['bcftools'])
+        expand("Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.{outtype}.tsv.gz", samplename=sampleName, suffix=suffix, caller=['bcftools'], outtype=["23andme", "23andme.snps"])
 
 rule call_glimpse2:
     input:
         bamGenerator,
-        expand("Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.23andme.tsv.gz", samplename=sampleName, suffix=suffix, caller=['glimpse2'])
+        expand("Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.{outtype}.tsv.gz", samplename=sampleName, suffix=suffix, caller=['glimpse2'], outtype=["23andme", "23andme.snps"])
 
+# equivalent to call_glimpse2 and call_bcftools
 rule call_glimpse2_and_bcftools:
     input:
         bamGenerator,
-        expand("Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.23andme.tsv.gz", samplename=sampleName, suffix=suffix, caller=['glimpse2', 'bcftools'])
+        expand("Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.{outtype}.tsv.gz", samplename=sampleName, suffix=suffix, caller=['glimpse2', 'bcftools'], outtype=["23andme", "23andme.snps"])
 
+# Note; does not create 23andme files...
 rule call_deepvariant:
     input:
         bamGenerator,
@@ -105,7 +103,7 @@ rule call_all:
     input:
         bamGenerator,
         expand("VCFs/deepvariant/{samplename}.{suffix}.deepvariant.vcf.gz", samplename=sampleName, suffix=suffix),
-        expand("Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.23andme.tsv.gz", samplename=sampleName, suffix=suffix, caller=['glimpse2', 'bcftools'])
+        expand("Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.{outtype}.tsv.gz", samplename=sampleName, suffix=suffix, caller=['glimpse2', 'bcftools'], outtype=["23andme", "23andme.snps"])
 
 # This takes in 1+ bams, all of the same sample (but possibly different libraries)
 # and creates a merged bam file of them (note; no index)
@@ -489,5 +487,27 @@ rule hg19_to_23andme:
         {params.binary} {params.filt} -o | gzip -9 > {output} )  2> {log}
         """
 
+rule hg19_to_23andme_snps:
+    input:
+        "VCFs/{caller}/{samplename}.{suffix}.{caller}.hg19.vcf.gz"    
+    output:
+        "Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.23andme.snps.tsv.gz"
+    log:
+        "Logs/{samplename}.{suffix}.{caller}.23andme.snps.log"
+    params:
+        bcftools=bcftools,
+        binary=GX.getBinary("bcf223andme"),
+        bcftoolsargs=GX.getParam("bcf223andmeParams", "bcffilt"),
+        snpfile=GX.getParam("bcf223andmeParams","snpfile"),
+        filt=getVcfFilters
+    shell: # in words; remove no-calls (-U), and places where the original and lifted chromosome do not match are excluded (-e ...)
+           # in addition, only emit sites listed in the VCF file (snpfile)
+           # merge (normalize) to reinstate multiallelic sites
+           # filter the genotypes (depending on the caller; GQ20 equivalent by default)
+           # and create a "23andme" file (using bcf223andme.py)
+        """
+        ({params.bcftools} view -Ou -U {params.bcftoolsargs} -T {params.snpfile} -e "INFO/OriginalContig!=CHROM" {input} | {params.bcftools} norm -Ov -m+  | \
+        {params.binary} {params.filt} -o | gzip -9 > {output} )  2> {log}
+        """
 
 

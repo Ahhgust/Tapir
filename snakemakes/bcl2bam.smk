@@ -5,8 +5,9 @@ VERSION=0.20
 # List of changes
 # Added support for the MiSeq (by changing the CopyComplete.txt dependency when extracting BCLs)
 
+ROOT=os.path.abspath(  os.path.join(workflow.current_basedir, ".."))
+configfile: os.path.join(ROOT, "configs", "config_v_2_standard.yaml")
 
-configfile: os.path.join(workflow.current_basedir, "config_v2_1.yaml")
 # GX provides an alternative way to get information from the config file.
 # In practice, it creates the illusion of full paths (when they are needed),
 # by stitching together that path based on the directory of this script.
@@ -51,6 +52,7 @@ if config["Bcldir"] != ".":
     BCLPATH=config["Bcldir"]
     if OUTDIR=="..":
         OUTDIR=os.path.join(BCLPATH, OUTDIR)
+        print(OUTDIR , " is the outdir")
 
 # the name of the BCL run directory.
 # eg, 240325_A01324_0104_BH2FFYDSXC
@@ -85,6 +87,12 @@ def parseSamplesheet(sheet):
     with open(sheet) as fh:
         for line in fh:
             line=line.rstrip()
+            if not all(ord(c) < 128 for c in line):
+                print("Your Samplesheet is not an ASCII-text file. That's not okay! If you're exporting from Excel, export as 'CSV (MS-DOS)')", file=sys.stderr)
+                exit(1)
+            if len(line) < 1: # tolerate extra whitespace (typically at the end of the file)
+                continue
+                
             if line.startswith("[Data]"):
                 getHeader=True
             elif not getHeader:
@@ -162,7 +170,7 @@ def parseSamplesheet(sheet):
 
 def isEmptyGzip(f):
     """
-    returns True/False iff a gzipped file is "empty" (may have nonzero file size, but not contents)
+    returns True/False iff a gzipped file is "empty" (may have nonzero file size, but no contents)
     """
     if os.path.getsize(f) == 0:
         return True
@@ -179,19 +187,24 @@ def parseFastqs(basedir):
     Input: a directory name with *.fastq.gz files AS MADE BY BCL2FASTQ2
     Output: none; updates the SAMPLES and OFFTARGETS data structures.
     """
+
+    
     files=glob.glob(os.path.join(basedir, "*fastq.gz")) # note: later on we only consider read1 (_R1_). If there's a read2, the BWA will find it.
     SAMPLENAME=[os.path.basename(x) for x in files]
+   
     global SAMPLES
     global OFFTARGETS
     validFiles = []
     # makes a pairing; each sample name corresponds to 1+ lanes of data (novaseq S4 it's 4 lanes)
     # the sample name and lane information is determined by the fastq files. 
+    i=-1
     for x in SAMPLENAME:
+        i += 1
         if re.match('.*_?.*_L\d+.*',x) is not None:
             if x.find("_R2_") > -1: # we ignore read 2 (and test for its presence later on)
                 continue
             # bcl2fastq does not emit empty fastqs; bcl-convert does. This effectively skips the empties
-            if isEmptyGzip(x):
+            if isEmptyGzip(files[i]): # was x, but we need the path... TODO: double check w/ bcl-convert
                 continue
             
             # file format is:
@@ -233,7 +246,7 @@ def parseFastqs(basedir):
                 inner['dirname'] = samp
             
             validFiles.append( os.path.join(basedir, x))
-            
+    print("ParseFastqs: ", basedir, "\n", validFiles)             
     return validFiles
 
 def aggregate_fastqs(wildcards):
@@ -283,9 +296,13 @@ def gather_all_reports(wildcards):
     Note this is run *after* the checkpoint
     this emits all files that should be created (at the level of the sample)
     """
-
-    fqdir = os.path.join(wildcards.outdir, wildcards.rundir, "Fastqs")   
     
+    if "outdir" not in wildcards:
+        wildcards.outdir="." 
+    if "rundir" not in wildcards:
+        wildcards.rundir="."
+
+    fqdir = os.path.join(wildcards.outdir, wildcards.rundir, "Fastqs") 
     parseFastqs(fqdir)
     
     
@@ -312,14 +329,10 @@ def gather_all_reports(wildcards):
         files.extend( \
             expand("{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.samstats.cov",
             outdir=wildcards.outdir, rundir=wildcards.rundir, dirname="Offtargets", samplename=samp)) # samstats 
-    print(files)        
+    print(files)  
+
     return files
     
-# set to either bcl2fastq or bcl-convert, depending on the format of the sample sheet
-bclConverter=parseSamplesheet(SAMPLESHEET) # determines the name of the Experiment and the library prep; performs a sanity check on the samples
-
-print(bclConverter , " is the converter")
-
 def bcl_complete(wildcards):
     """
     helper function; 
@@ -338,6 +351,11 @@ rule bcl:
     input:
         expand("{outdir}/{rundir}/SampleSheet.csv", outdir=os.path.join(OUTDIR,EXPERIMENT), rundir=BCLDIR), # extract fastqs (successfully)...
         expand("{outdir}/{rundir}/RunAnalysisComplete.txt", outdir=os.path.join(OUTDIR,EXPERIMENT), rundir=BCLDIR)
+    # set to either bcl2fastq or bcl-convert, depending on the format of the sample sheet
+
+bclConverter=parseSamplesheet(SAMPLESHEET) # determines the name of the Experiment and the library prep; performs a sanity check on the samples
+print(bclConverter , " is the converter")
+
 
 if bclConverter=="bcl2fastq":
     checkpoint extract_fastqs:
@@ -400,6 +418,14 @@ rule gather_fastqs:
         """
         cp {params.samplesheet} {output.samplesheet} && echo "bcl2bam version " {params.version} > {output.version}
         """
+
+
+# used for fastq input (as opposed to BCL)
+# NOT recommended; but supported
+rule fastq2bam:
+    # todo? aggregate_fastqs too? if so, need to tweak wildcards
+    input:
+        gather_all_reports
 
 def getLibrary(wildcards):
     """

@@ -53,3 +53,5 @@ dependencies:
 - bioconda::samtools>=1.7
 - bioconda::fastqc>=0.12
 - bioconda::bwa>=0.7
+- r-tidyverse
+- r-Hmisc

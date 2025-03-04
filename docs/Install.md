@@ -11,7 +11,7 @@ Installation involves three steps, which are as follows:
 -  [**NextSeq support**](#nextseq-support) Tapir supports Illumina's NextSeq (beta)
     - bcl-convert *may* have to be (re)installed. See notes below.
 
-## Download
+## Install
 
 Tapir uses many large files. Because I'm ~~cheap~~ a fan of reproducible science, the largest of these files are stored on zenodo.
 In addition, make sure your \*nix machine has the following installed:
@@ -19,7 +19,32 @@ In addition, make sure your \*nix machine has the following installed:
 
 
 ### Installation location
+Tapir is meant to be installed at the system level; *where* is up to you. <br>
+Likewise, how you handle security is up to you (though one solution is to make a tapir group, and set permissions (e.g., `chown` and `chgrp`) accordingly)
+<br>
+For now, let's say you want to install Tapir to:
+```
+/mnt/disk0/Tapir
+```
+Let's make an environment variable called TAPIR, and set it to the above:
 
+```
+TAPIR=/mnt/disk0/Tapir
+export TAPIR
+```
+
+**Note** You will want to set `TAPIR` to a location that makes sense to you and your compute setup. 
+<br>
+Also note, we will add the above to our .bashrc as well... 
+
+### Download
+
+Let's `cd` into the right location:
+```
+cd $TAPIR
+```
+
+And start downloading the oh so many files that Tapir uses. <br>
 Genomic files are big; many genomic computations are IO bound (ie, the speed of the disk dictates the speed of the program). Tapir leverages fast (local) storage whereever possible. We recommend two *fast* local devices. The first (faster/larger) I would mount directly as /tmp, and the second (possibly slower) is wwhere I'd put Tapir. On (one of) our systems Tapir is installed on /mnt/ref/Tapir/. First, change directories to `/mnt/ref/` (adjusing the path as necessary to your system).
 
 ```
@@ -72,6 +97,10 @@ alias 'll=ls -tlr'
 #the former is *needed* by sambamba/gatk
 ulimit -n 65768
 ulimit -s unlimited
+
+# and as alluded above, let's make sure that TAPIR is defined for future shell instances
+TAPIR=/mnt/disk0/Tapir
+export TAPIR
 ```
 (e.g., by editing ~/.bashrc, e.g., ```gedit ~/.bashrc``` and add the above to it)
 
@@ -80,9 +109,7 @@ If you're using some other shell, you'll need to translate these commands as nec
 
 ## Virtual environment
 
-Tapir can be run as a virtual environment; we use conda for our virtualization, and Mamba to download our dependencies.
-<br>
-Conda can also be used to load the environment, but conda's dependency manager is a big buggy. (ie, it sometimes works, sometimes doesn't.)
+Tapir can be run as a virtual environment; we find Mamba to be a bit more stable (conda's dependency management is a bit of a hot mess)
 
 ### Tapir using Mamba (recommended)
 
@@ -121,7 +148,8 @@ mv tapir.yaml.template.txt tapir.yml
 ```
 mamba env update -n tapir --file PATH_TO_TAPIR/snakemakes/tapir.yaml
 ```
-where PATH_TO_TAPIR is the, well, the path to this program (`/mnt/disk0/Tapir` in the example).
+where PATH_TO_TAPIR is the, well, the path to this program (`/mnt/disk0/Tapir` in the example).<br>
+Answer 'Y' (yes) to all prompts.
 
 
 ### Tapir using Conda (less recommended)
@@ -142,11 +170,22 @@ You can undo this by running `conda init --reverse $SHELL`? [yes|no]
 [no] >>> yes
 ```
 
+And now load all of the packages/libraries used by tapir.
+We provide an *example* environment:
+Please (g)edit `tapir.yaml.template.txt`
+and save it
+```
+mv tapir.yaml.template.txt tapir.yml
+```
+
+
 Now, let's set up your environment:
 ```
-conda env create --name tapir --file PATH_TO_TAPIR/snakemakes/tapir.yaml
+conda env create --name tapir --file $TAPIR/snakemakes/tapir.yml
 ```
 where PATH_TO_TAPIR is the, well, the path to this program (`/mnt/disk0/Tapir` in the example).
+<br>
+Conda sometimes fails to solve the dependencies. That's one reason to use mamba instead...
 
 
 ### Native install
@@ -159,6 +198,7 @@ Tapir is largely self-contained. It is assumed that the following are already in
   - gplots (the following are required by GATK)
   - gsalib
   - reshape2
+    - (reshape2 is soft requirement; needed by GATK, but no tools in Tapir require it)
 - Java
   - version 8 (ie, SDK 1.8)
 - samtools

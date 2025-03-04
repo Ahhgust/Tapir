@@ -16,8 +16,9 @@ A MPS read (DNA sequence) with corresponding base qualities. Often compressed wi
 
 - **sam**. an uncompressed version of the bam file format. Good people never store data in sam format.
 
-- **vcf**. Variant call format; often compressed as vcf.gz or bcf. A file format commonly used to describe SNVs. See [Wikipedia article](https://en.wikipedia.org/wiki/Variant_Call_Format).
+- **vcf**. Variant call format; often (block) compressed as vcf.gz or bcf. A file format commonly used to describe SNVs. See [Wikipedia article](https://en.wikipedia.org/wiki/Variant_Call_Format).
 
+- **23andMe**. A file format used by *23andMe*, apparently when you download your "raw" data (by which they mean genotypes) this is the format. The format is loosely described [here](http://fileformats.archiveteam.org/wiki/23andMe). Note that Tapir does not add RS numbers. I sincerely hope that doesn't matter (mainly because it shouldn't).
 
 ## List of tools
 ### Off the shelf tools:
@@ -27,7 +28,7 @@ A MPS read (DNA sequence) with corresponding base qualities. Often compressed wi
 
 - **bcl-convert** Tool for converting BCL files to Fastq files. Works on newer/all Illumina instruments. For Tapir, likely requires a custom installation. Available [here](https://www.illumina.com/content/illumina-support/language-master/en/sequencing/sequencing_software/bcl-convert/downloads.html)
 
-- **bwa** Burrows Wheeler Aligner. A tool for aligning Fastq files to the reference genome; Produces sequence alignments (to the reference) in the SAM file format. Available [here](https://github.com/lh3/bwa)
+- **bwa** Burrows Wheeler Aligner. A tool for aligning Fastq files to the reference genome; Produces sequence alignments (to the reference; the reads are not aligned to each other) in the SAM file format. Available [here](https://github.com/lh3/bwa)
 
 - **bqsr**. Base quality score recalibration. 
 A data reprocessing step that recalculates base qualities based on empirical measures 
@@ -39,17 +40,17 @@ Tapir uses GATK's implementation of BQSR, available [here](https://github.com/br
 - **fastqc**. Tool for high throughput sequencing which checks the quality control of raw sequence data; 
 includes checks on base quality, read length, and extraneous sequences. Available [here](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 
-- **glimpse2**. Tool for estimating genotypes from low-coverage whole genome sequencing; 
-Glimpse2 considers LD (and allele frequency, as a prior) when estimating genotypes; 
-Glimpse2 is an imputation method (it is also a genotype refinement method). Available [here](https://github.com/odelaneau/GLIMPSE)
+- **GLIMPSE**. Tool for estimating genotypes from low-coverage whole genome sequencing; 
+GLIMPSE (v2) considers LD (and allele frequency, as a prior) when estimating genotypes; 
+GLIMPSE is an imputation method (it is also a genotype refinement method). Available [here](https://github.com/odelaneau/GLIMPSE)
 
 - **samtools** Common tools for working with SAM, BAM, and CRAM file formats; Tools include flagstat (produces summary statistics) and view (file format conversion). Available [here](https://github.com/samtools)
 
 ### Custom scripts
 
-- **samstats** Custom script that provides information on segregating sites (selected from the GSA), including read depth and breadth (of coverage), duplication rates and template lengths
+- **samStats.py** Custom script that provides information on segregating sites (selected from the GSA), including read depth and breadth (of coverage), duplication rates and template lengths
 
-- **estimateXPloidy** A simple tool to estimate the ploidy of the X chromosome. BCFtools and GLIMPSE support haploid and diploid calling models; this uses the number of reads on the X vs an autosome (chromosome 7) to estimate the ploidy of the X chromosome (roughly speaking, the biological sex of the sample). In (very) low coverage settings, structural and copy-number variants can affect this tool.
+- **estimateXPloidy.R** A simple tool to estimate the ploidy of the X chromosome. BCFtools and GLIMPSE support haploid and diploid calling models; this tool uses the number of reads on the X vs an autosome (chromosome 7) to estimate the ploidy of the X chromosome (roughly speaking, the biological sex of the sample). In (very) low coverage settings, structural and copy-number variants can affect this tool.
 
 - **bcf223andme.py** A simple tool to convert a VCF file 
 (not from a variant caller, but from Tapir; ie, it must include homozygous reference calls) 
@@ -58,7 +59,7 @@ Supports filtering on genotype quality (BCFtools), as well as the posterior prob
 X chromosome genotypes are "diplotyzed" (converted from haploid to diploid, as necessary). No-calls are dropped.
 
 ## Key terminology
-- **Bayes Factor (BF, as provided by Tapir)**. The posterior odds (of the genotype, GP, transformed to odds), relative to the prior odds (naive, estimated using Hardy Weinberg).
+- **Bayes factor (BF, as provided by Tapir)**. The posterior odds (of the genotype, GP, transformed to odds), relative to the prior odds (naive, estimated using Hardy Weinberg).
 Informally, a posterior probability is composed of two parts; the prior 
 (which only cares about what we already know; it does not consider the data/evidence) and the likelihood (which doesn't care about what we knew, but instead reflects the evidence provided by the data).
 The BF (as implemented by Tapir) attempts to decouple these two pieces of information. 
@@ -66,8 +67,8 @@ A BF>1 implies empirical support for a given genotype call.
 Note that most alleles in a population are rare (<<1%). 
 Diabolically, in the complete absence of data one can still accurately infer genotypes.
 In short you could use the following algorithm: if the allele is rare, call the genotype homozygous major (often homozygous reference); for other SNPs, simply drop them.
-The resulting profile will be accurate (with respect to any individual), and *very* matchy (because most everyone has that profile). 
-However such markers will have BF<1. It should be noted that the BF described is *a* Bayes Factor; not *the* Bayes Factor.
+The resulting profile will be accurate (with respect to any individual), and *very* matchy (because most everyone has that profile and the genotypes in the profile are accurate). 
+However such markers will have BF<1. It should be noted that the BF described is *a* Bayes factor; not *the* Bayes factor.
 
 - **Breadth (of coverage)**. The fraction of the genome that has at least a given number of reads. E.g., Breadth (5×) is the fraction of the genome that has at least 5 reads. See also, Depth, Coverage; estimated using the same sites used to estimate Coverage.
 
@@ -75,7 +76,8 @@ However such markers will have BF<1. It should be noted that the BF described is
 
 - **Coverage**. How many times (on average) do we measure sites? Denoted as "×" (as in *times*), for example: 5.2×. 
 Coverage is often a misused term; we mean it to be the "redundancy of coverage" of Lander and Waterman [link to original paper](https://doi.org/10.1016/0888-7543(88)90007-9). 
-Note that Lander and Waterman's equation to estimate coverage does NOT apply well to shotgun WGS. In practice, we define coverage as the **mean read depth** estimated at 10k autosomal sites selected from Illumina's GSA panel. 
+Note that Lander and Waterman's equation to estimate coverage does NOT apply well to shotgun WGS. In practice, we define coverage as the **mean read depth**. We estimate at 10k autosomal sites selected from Illumina's GSA panel. 
+If you want to be formal about things, you can think of coverage (C, that think you want to estimate) and your estimate of coverage $\hat{\Cmath}$, which is provided by Tapir.
 Only reads that pass QC are considered. Before your ask, yes, 10k is actually a very large sample size to estimate a mean.
 
 - **Depth**. At a site, how many times was it measured? Only reads that pass QC are considered. If reads are selected at random from a person's genome, per Lander and Waterman, Depth is Poisson distributed with lambda=Coverage.

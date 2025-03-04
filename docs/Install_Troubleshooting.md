@@ -1,5 +1,8 @@
 # Troubleshooting
 
+# Tapir isn't working
+## 
+
 ## Glimpse
 Glimpse (as provided by Tapir) requires AVX/AVX2 instructions; this may not be available on your machine (I'm looking at you, VirtualBox hypervisor). <br>
 Tapir uses Glimpse v2.0.0; specifically, the release found here: <br>

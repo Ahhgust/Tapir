@@ -1,5 +1,9 @@
 ![Tapir](./images/Tapir.png)
 
+All images and art brought to you by [Liz Kowalzcyk](https://www.researchgate.net/profile/Elizabeth-Kowalczyk) (aka, Liz Koala!) 
+and 
+[Mr. Jonathan King](https://www.researchgate.net/profile/Jonathan-King-4)
+
 # Tapir
 
 Two-step <br>
@@ -16,11 +20,5 @@ Reporting <br>
 -  ![Click here](docs/Step1.md) Tapir is a two-step; Step 1 is converting raw genomic information (BCL) to a processed alignment file (BAM).
 -  ![Click here](docs/QC.md) After Step1 you (the user) need to evaluate your sample(s). Are they fit for further analysis?
 -  ![Click here](docs/Step2.md) Step 2 converts 1 (or more) BAM files into data suitable for upload to GEDmatch.
-
-
-
-
-
-
 
 
