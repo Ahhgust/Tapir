@@ -1,0 +1,191 @@
+
+This suite of programs will maintain folders and keep track of which tape they have been backed up to.
+The database will live in a folder (/PATH/TO/DB).
+These programs will look for folders in a staging directory (/PATH/TO/STAGE).
+
+It may be necessary to run these commands with sudo priviledges, especially when hitting device files.
+Also, note that anything with tape will be slow: grab a coffee.
+
+*********************************************************************
+Contents:
+
+To make a new (empty) database
+To add folders to the database
+To list all folders known to the database
+To verify that all folders have the same contents as when they were added
+To verify that a folder has the same contents as when it was added
+To list all folders that are not currently backed up to tape
+To back some folders up to tape
+To duplicate a tape
+To list all tapes known to the database
+To free up space by deleting folders that are on tape
+To restore previously deleted folders from a tape
+To list the tapes all folders are on
+To find the tape a folder is on
+To backup the database
+To restore a deleted database
+
+*********************************************************************
+To make a new (empty) database:
+
+Run:
+	python3 TapeDeck.py InitDatabase --database /PATH/TO/DB
+
+*********************************************************************
+To add folders to the database:
+
+Move the folders to their staging area (/PATH/TO/STAGE).
+
+Run:
+	python3 TapeDeck.py HuntNewFolders --database /PATH/TO/DB --backfold /PATH/TO/STAGE
+
+The command will write the newly observed folders to stdout.
+
+*********************************************************************
+To list all folders known to the database:
+
+Run:
+	python3 TapeDeck.py ListFolders --database /PATH/TO/DB
+
+*********************************************************************
+To verify that all folders have the same contents as when they were added:
+
+Run
+	python3 TapeDeck.py VerifyFolders --database /PATH/TO/DB --backfold /PATH/TO/STAGE
+
+*********************************************************************
+To verify that a folder has the same contents as when it was added:
+
+Run
+	python3 TapeDeck.py VerifyFolders --database /PATH/TO/DB --backfold /PATH/TO/STAGE --fold FoldName
+
+*********************************************************************
+To list all folders that are not currently backed up to tape:
+
+Run
+	python3 TapeDeck.py ListUntaped --database /PATH/TO/DB --backfold /PATH/TO/STAGE
+
+*********************************************************************
+To back some folders up to tape:
+
+Find a folder to use for scratch (/tmp/vhs).
+
+While ListUntaped reports that more than 9Tb are not on tape{
+	
+	Put a tape in the drive (by default, tape drive is /dev/st0).
+	
+	Run
+		python3 TapeDeck.py NewTape --database /PATH/TO/DB --backfold /PATH/TO/STAGE --scratch /tmp/vhs --out /dev/st0 --name T_YEAR_MONTH_DAY_24HOUR
+	
+	Eject tape (I don't care if you're kind, LTO will always rewind).
+	
+	Label the tape with the name (T_YEAR_MONTH_DAY_24HOUR) and put somewhere safe.
+	
+	Run ListUntaped again.
+}
+
+PEOPLE OF THE FUTURE:
+Note how big your tapes are (LTO-8 are 12000000000000 bytes uncompressed).
+If not using LTO-8, may need to look into --max and --min.
+Defaults for LTO-8 are --max 11000000000000 and --min 9000000000000.
+
+*********************************************************************
+To duplicate a tape:
+
+Find a folder to use for scratch (/tmp/vhs).
+
+Run
+	mkdir /tmp/vhs
+
+Put the tape to copy in the drive (by default, tape drive is /dev/st0).
+
+Run
+	dd if=/dev/st0 of=/tmp/vhs/tmp.tar
+!!BE VERY CAREFUL - get if and of right.!!
+
+Eject the tape.
+
+Put a new tape in the drive.
+
+Run
+	dd if=/tmp/vhs/tmp.tar of=/dev/st0
+
+Eject the tape, label.
+
+Run
+	rm -rf /tmp/vhs
+
+NOTE:
+If you are making a tape and are planning to duplicate, you can write to a temporary file rather than the tape.
+Then, you can dd from the temporary to each tape.
+How to do this is left as an exercise for the reader.
+
+*********************************************************************
+To list all tapes known to the database:
+
+Run
+	python3 TapeDeck.py ListTapes --database /PATH/TO/DB
+
+*********************************************************************
+To free up space by deleting folders that are on tape:
+
+Run
+	python3 TapeDeck.py KillTaped --database /PATH/TO/DB --backfold /PATH/TO/STAGE
+
+*********************************************************************
+To restore previously deleted folders from a tape:
+
+Find a folder to use for scratch (/tmp/vhs).
+
+Grab the tape with the backup.
+
+Put tape in drive (by default, tape drive is /dev/st0).
+
+Run
+	python3 TapeDeck.py UnpackTape --database /PATH/TO/DB --backfold /PATH/TO/STAGE --scratch /tmp/vhs --in /dev/st0
+
+Eject the tape.
+
+It would be a good idea to verify the results (VerifyFolders).
+
+*********************************************************************
+To list the tapes all folders are on:
+
+Run
+	python3 TapeDeck.py FindTape --database /PATH/TO/DB
+
+*********************************************************************
+To find the tape a folder is on:
+
+Get the name of the folder(s) of interest: FOLDA (FOLDB ...).
+
+Run
+	python3 TapeDeck.py FindTape --database /PATH/TO/DB --fold FOLDA FOLDB ...
+
+*********************************************************************
+To backup the database:
+
+Decide where you want to save the backup to (/PATH/TO/BACKUP.tar.gz.aes).
+
+Decide what password you want to use (default is 1337, but that will only stop casual observers).
+
+Save this password somewhere. If you forget, you will be SOL.
+
+Run
+	python3 TapeDeck.py BackupDatabase --database /PATH/TO/DB --out /PATH/TO/BACKUP.tar.gz.aes --pass 1337
+
+*********************************************************************
+To restore a deleted database:
+
+Figure out where the backup was saved (/PATH/TO/BACKUP.tar.gz.aes).
+
+Recall the password you used. If you forgot, you are SOL... sorry. Pray that P=NP?
+
+Run
+	python3 TapeDeck.py RestoreDatabase --database /PATH/TO/DB --in /PATH/TO/BACKUP.tar.gz.aes --pass 1337
+
+
+
+
+
+

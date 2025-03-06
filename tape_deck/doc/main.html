@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<HTML>
+<HEAD>
+	<TITLE>TapeDeck</TITLE>
+</HEAD>
+<BODY>
+<P>TapeDeck</P>
+<P>Utilities for managing a backup.</P>
+<TABLE>
+	<TR>
+		<TD><A HREF="#prog0">InitDatabase</A></TD>
+		<TD>Make a new database.</TD>
+	</TR>
+	<TR>
+		<TD><A HREF="#prog1">ListFolders</A></TD>
+		<TD>List known data folders.</TD>
+	</TR>
+	<TR>
+		<TD><A HREF="#prog2">HuntNewFolders</A></TD>
+		<TD>Hunt newly added data folders.</TD>
+	</TR>
+	<TR>
+		<TD><A HREF="#prog3">VerifyFolders</A></TD>
+		<TD>Check that data folders match backup.</TD>
+	</TR>
+	<TR>
+		<TD><A HREF="#prog4">ListTapes</A></TD>
+		<TD>List tapes.</TD>
+	</TR>
+	<TR>
+		<TD><A HREF="#prog5">ListUntaped</A></TD>
+		<TD>List folders that are not currently taped.</TD>
+	</TR>
+	<TR>
+		<TD><A HREF="#prog6">NewTape</A></TD>
+		<TD>Create a new tape.</TD>
+	</TR>
+	<TR>
+		<TD><A HREF="#prog7">UnpackTape</A></TD>
+		<TD>Restore data from tape.</TD>
+	</TR>
+	<TR>
+		<TD><A HREF="#prog8">BackupDatabase</A></TD>
+		<TD>Backup the database.</TD>
+	</TR>
+	<TR>
+		<TD><A HREF="#prog9">RestoreDatabase</A></TD>
+		<TD>Restore the database.</TD>
+	</TR>
+	<TR>
+		<TD><A HREF="#prog10">KillTaped</A></TD>
+		<TD>Delete folders that are currently taped.</TD>
+	</TR>
+	<TR>
+		<TD><A HREF="#prog11">FindTape</A></TD>
+		<TD>Find the tape that holds a folder.</TD>
+	</TR>
+</TABLE>
+<HR>
+<P><A ID="prog0">TapeDeck InitDatabase</A></P>
+<P>python3 TapeDeck InitDatabase</P>
+<P>Make a new database.</P>
+<TABLE>
+	<TR>
+		<TD>Database Directory</TD>
+		<TD>--database</TD>
+		<TD>The folder containing the database.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--database C:\Database\</TD>
+	</TR>
+</TABLE>
+<HR>
+<P><A ID="prog1">TapeDeck ListFolders</A></P>
+<P>python3 TapeDeck ListFolders</P>
+<P>List known data folders.</P>
+<TABLE>
+	<TR>
+		<TD>Database Directory</TD>
+		<TD>--database</TD>
+		<TD>The folder containing the database.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--database C:\Database\</TD>
+	</TR>
+	<TR>
+		<TD>Output</TD>
+		<TD>--out</TD>
+		<TD>The place to write the list.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--out /home/ben/report.txt</TD>
+	</TR>
+</TABLE>
+<HR>
+<P><A ID="prog2">TapeDeck HuntNewFolders</A></P>
+<P>python3 TapeDeck HuntNewFolders</P>
+<P>Hunt newly added data folders.</P>
+<TABLE>
+	<TR>
+		<TD>Database Directory</TD>
+		<TD>--database</TD>
+		<TD>The folder containing the database.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--database C:\Database\</TD>
+	</TR>
+	<TR>
+		<TD>Backup Folder</TD>
+		<TD>--backfold</TD>
+		<TD>The folder to back up.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--backfold C:\WorkingSet\</TD>
+	</TR>
+	<TR>
+		<TD>Output</TD>
+		<TD>--out</TD>
+		<TD>The place to list newly found folders.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--out /home/ben/report.txt</TD>
+	</TR>
+	<TR>
+		<TD>List Only</TD>
+		<TD>--dry-run</TD>
+		<TD>Just list new folders, do not add to database.</TD>
+	</TR>
+</TABLE>
+<HR>
+<P><A ID="prog3">TapeDeck VerifyFolders</A></P>
+<P>python3 TapeDeck VerifyFolders</P>
+<P>Check that data folders match backup.</P>
+<TABLE>
+	<TR>
+		<TD>Database Directory</TD>
+		<TD>--database</TD>
+		<TD>The folder containing the database.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--database C:\Database\</TD>
+	</TR>
+	<TR>
+		<TD>Backup Folder</TD>
+		<TD>--backfold</TD>
+		<TD>The folder to back up.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--backfold C:\WorkingSet\</TD>
+	</TR>
+	<TR>
+		<TD>Output</TD>
+		<TD>--out</TD>
+		<TD>The place to list newly found folders.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--out /home/ben/report.txt</TD>
+	</TR>
+	<TR>
+		<TD>Limit Folders</TD>
+		<TD>--fold</TD>
+		<TD>The folders to look at. By default, all.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--fold a b</TD>
+	</TR>
+</TABLE>
+<HR>
+<P><A ID="prog4">TapeDeck ListTapes</A></P>
+<P>python3 TapeDeck ListTapes</P>
+<P>List tapes.</P>
+<TABLE>
+	<TR>
+		<TD>Database Directory</TD>
+		<TD>--database</TD>
+		<TD>The folder containing the database.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--database C:\Database\</TD>
+	</TR>
+	<TR>
+		<TD>Output</TD>
+		<TD>--out</TD>
+		<TD>The place to write the list.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--out /home/ben/report.txt</TD>
+	</TR>
+</TABLE>
+<HR>
+<P><A ID="prog5">TapeDeck ListUntaped</A></P>
+<P>python3 TapeDeck ListUntaped</P>
+<P>List folders that are not currently taped.</P>
+<TABLE>
+	<TR>
+		<TD>Database Directory</TD>
+		<TD>--database</TD>
+		<TD>The folder containing the database.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--database C:\Database\</TD>
+	</TR>
+	<TR>
+		<TD>Backup Folder</TD>
+		<TD>--backfold</TD>
+		<TD>The folder to back up.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--backfold C:\WorkingSet\</TD>
+	</TR>
+	<TR>
+		<TD>Output</TD>
+		<TD>--out</TD>
+		<TD>The place to list newly found folders.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--out /home/ben/report.txt</TD>
+	</TR>
+</TABLE>
+<HR>
+<P><A ID="prog6">TapeDeck NewTape</A></P>
+<P>python3 TapeDeck NewTape</P>
+<P>Create a new tape.</P>
+<TABLE>
+	<TR>
+		<TD>Database Directory</TD>
+		<TD>--database</TD>
+		<TD>The folder containing the database.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--database C:\Database\</TD>
+	</TR>
+	<TR>
+		<TD>Backup Folder</TD>
+		<TD>--backfold</TD>
+		<TD>The folder to back up.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--backfold C:\WorkingSet\</TD>
+	</TR>
+	<TR>
+		<TD>Scratch Directory</TD>
+		<TD>--scratch</TD>
+		<TD>A folder for temporary tar files.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--scratch /tmp/vhs</TD>
+	</TR>
+	<TR>
+		<TD>Output</TD>
+		<TD>--out</TD>
+		<TD>The place to write the final tar file.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--out /dev/st0</TD>
+	</TR>
+	<TR>
+		<TD>Minimum Size</TD>
+		<TD>--min</TD>
+		<TD>The minimum number of bytes to push to tape.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--min 9000000000000</TD>
+	</TR>
+	<TR>
+		<TD>Maximum Size</TD>
+		<TD>--max</TD>
+		<TD>The maximum number of bytes to push to tape.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--max 11000000000000</TD>
+	</TR>
+	<TR>
+		<TD>Tape Name</TD>
+		<TD>--name</TD>
+		<TD>The name to assign to the tape.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--name T2024_02_07</TD>
+	</TR>
+</TABLE>
+<HR>
+<P><A ID="prog7">TapeDeck UnpackTape</A></P>
+<P>python3 TapeDeck UnpackTape</P>
+<P>Restore data from tape.</P>
+<TABLE>
+	<TR>
+		<TD>Database Directory</TD>
+		<TD>--database</TD>
+		<TD>The folder containing the database.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--database C:\Database\</TD>
+	</TR>
+	<TR>
+		<TD>Backup Folder</TD>
+		<TD>--backfold</TD>
+		<TD>The folder to back up.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--backfold C:\WorkingSet\</TD>
+	</TR>
+	<TR>
+		<TD>Scratch Directory</TD>
+		<TD>--scratch</TD>
+		<TD>A folder for temporary tar files.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--scratch /tmp/vhs</TD>
+	</TR>
+	<TR>
+		<TD>Input</TD>
+		<TD>--in</TD>
+		<TD>The place to read tar backup.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--in /dev/st0</TD>
+	</TR>
+</TABLE>
+<HR>
+<P><A ID="prog8">TapeDeck BackupDatabase</A></P>
+<P>python3 TapeDeck BackupDatabase</P>
+<P>Backup the database.</P>
+<TABLE>
+	<TR>
+		<TD>Database Directory</TD>
+		<TD>--database</TD>
+		<TD>The folder containing the database.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--database C:\Database\</TD>
+	</TR>
+	<TR>
+		<TD>Output</TD>
+		<TD>--out</TD>
+		<TD>The place to write the final tar file.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--out /home/ben/backup.tar.gz.aes</TD>
+	</TR>
+	<TR>
+		<TD>Password</TD>
+		<TD>--pass</TD>
+		<TD>The password to encrypt with.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--pass 1337</TD>
+	</TR>
+</TABLE>
+<HR>
+<P><A ID="prog9">TapeDeck RestoreDatabase</A></P>
+<P>python3 TapeDeck RestoreDatabase</P>
+<P>Restore the database.</P>
+<TABLE>
+	<TR>
+		<TD>Database Directory</TD>
+		<TD>--database</TD>
+		<TD>The folder to extract the database to.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--database C:\Database\</TD>
+	</TR>
+	<TR>
+		<TD>Input</TD>
+		<TD>--in</TD>
+		<TD>The tar to backup from.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--in /home/ben/backup.tar.gz.aes</TD>
+	</TR>
+	<TR>
+		<TD>Password</TD>
+		<TD>--pass</TD>
+		<TD>The password to decrypt with.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--pass 1337</TD>
+	</TR>
+</TABLE>
+<HR>
+<P><A ID="prog10">TapeDeck KillTaped</A></P>
+<P>python3 TapeDeck KillTaped</P>
+<P>Delete folders that are currently taped.</P>
+<TABLE>
+	<TR>
+		<TD>Database Directory</TD>
+		<TD>--database</TD>
+		<TD>The folder containing the database.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--database C:\Database\</TD>
+	</TR>
+	<TR>
+		<TD>Backup Folder</TD>
+		<TD>--backfold</TD>
+		<TD>The folder to clean up.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--backfold C:\WorkingSet\</TD>
+	</TR>
+	<TR>
+		<TD>Output</TD>
+		<TD>--out</TD>
+		<TD>The place to list deleted folders.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--out /home/ben/report.txt</TD>
+	</TR>
+</TABLE>
+<HR>
+<P><A ID="prog11">TapeDeck FindTape</A></P>
+<P>python3 TapeDeck FindTapeListUntaped</P>
+<P>Find the tape that holds a folder.</P>
+<TABLE>
+	<TR>
+		<TD>Database Directory</TD>
+		<TD>--database</TD>
+		<TD>The folder containing the database.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--database C:\Database\</TD>
+	</TR>
+	<TR>
+		<TD>Output</TD>
+		<TD>--out</TD>
+		<TD>The place to list newly found folders.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--out /home/ben/report.tsv</TD>
+	</TR>
+	<TR>
+		<TD>Limit Folders</TD>
+		<TD>--fold</TD>
+		<TD>The folders to look for. By default, all.</TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD></TD>
+		<TD>--fold a b</TD>
+	</TR>
+</TABLE>
+</BODY>
+</HTML>

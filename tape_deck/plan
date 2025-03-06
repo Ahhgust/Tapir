@@ -1,0 +1,20 @@
+Tabs - Tapes, Folders, Jobs, and different staging folders
+
+Folder Tab
+
+	Folder	Size	Date	Tape
+
+Tape Tab
+
+	Tape	Date	Folders
+
+Staging Tabs
+
+	[Refresh]
+	Folder	Size	Tape
+	Name	8Gby	.		[Verify/Add]	[Delete]	//unadded come first, then untaped, no delete button if no tape
+
+	Total Untaped
+	10Tb
+	[New Tape]
+
