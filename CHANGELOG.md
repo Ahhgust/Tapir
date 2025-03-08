@@ -4,7 +4,8 @@
 ### Beta
 3/2025
 -  Support for multiple config files added.
-
+-  Tape backup routines added (see: tape_deck/)
+	
 2/2025
 -  Added support for FASTQ input (as well as BCL)
 -  Mixtify now run iff multiple bam files are merged.

@@ -1,4 +1,17 @@
 import os, sys
+# Written by August Woerner
+# This is a convenience function (okay, class)
+# that ingests a config "object" (snakemake)
+# specifically, a config object based on the
+# fields expected in the configuration files (../configs/*)
+# and lets the values be easily queried.
+#
+# in short, there's a lot of redundant code when you specify *params*
+# and related fields in a snakemake routine that is at least somewhat complicated
+# this reduces the amount of complication, and standardizes things,
+# Modify at your own risk (This is not intended for public consumption,
+# but if you look at how it is used, you can probabily find ways to extend
+# the routines used for other purposes..)
 
 class GenomixHelper:
 

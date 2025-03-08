@@ -1,12 +1,32 @@
 import glob, os, sys, re, time, gzip
 import GenomixHelper
 
-VERSION=0.20
+VERSION=0.30
 # List of changes
 # Added support for the MiSeq (by changing the CopyComplete.txt dependency when extracting BCLs)
 
 ROOT=os.path.abspath(  os.path.join(workflow.current_basedir, ".."))
 configfile: os.path.join(ROOT, "configs", "config_v_2_standard.yaml")
+
+configpath=os.path.join(ROOT, "configs", "config_v_2_standard.yaml")
+i=0
+
+if '--configfiles' in sys.argv:
+    print("Only 1 config file is supported. Use --configfile instead", file=sys.stderr)
+    exit(1) #    
+
+# They python variable `configpath` is equivalent to the snakemake variable `configfile`
+# (though this script cannot access `configfile` directly)
+if '--configfile' in sys.argv:
+    i = sys.argv.index('--configfile')
+
+if i:
+    if i < len(sys.argv)-1:
+        configpath=sys.argv[i+1]
+    else: # I do not think it's possible to enter this Else statement, but just in case.
+        print("--configfile argument is misspecified (?)", file=sys.stderr)
+        exit(1) # 
+    
 
 # GX provides an alternative way to get information from the config file.
 # In practice, it creates the illusion of full paths (when they are needed),
@@ -33,30 +53,30 @@ def sanitizeString(s):
     """
     return "".join(c for c in s if c.isalnum() or c == "_" or c == '-' or c == '/')
 
-
+def removeTrailingSlash(s):
+    """
+    Converts a foo/ or foo/bar/ to foo or foo/bar, respectively
+    """
+    if len(s) and s[-1] == "/":
+        return s[:-1]
+    return s    
+    
 SAMPLES=dict()
 OFFTARGETS=dict() # eg, UDIs that you extract but are not associated with a sample
 LIBRARIES=dict()
-EXPERIMENT=sanitizeString( config["Experiment"] ) # updated in parseSampleSheet
-# this is the PARENT directory of where the output will be written
-# OUTDIR/EXPERIMENT is taken as the root directory
-OUTDIR=config["Outdir"]
 SAMPLESHEET=config["Samplesheet"]
+if "SampleSheet" in config:
+    SAMPLESHEET=config["SampleSheet"]
 
-BCLPATH= os.getcwd()
-
-if config["Bcldir"] != ".":
-    if not os.path.isdir(config["Bcldir"]):
-        print("You specified a directory that doesn't exist: ", config["Bcldir"], file=sys.stderr)
-        exit(1)
-    BCLPATH=config["Bcldir"]
-    if OUTDIR=="..":
-        OUTDIR=os.path.join(BCLPATH, OUTDIR)
-        print(OUTDIR , " is the outdir")
-
-# the name of the BCL run directory.
-# eg, 240325_A01324_0104_BH2FFYDSXC
-BCLDIR= os.path.basename(BCLPATH )
+EXPERIMENT=""
+    
+# TODO: ADD CHECK FOR FASTQ INPUT
+if not os.path.isdir(config["Bcldir"]):
+    print("You specified a directory that doesn't exist: ", config["Bcldir"], file=sys.stderr)
+    exit(1)
+    
+BCLDIR=removeTrailingSlash( config["Bcldir"] )
+RUN=os.path.basename(BCLDIR)
 
 # if the sample sheet is not found
 if not os.path.isfile(SAMPLESHEET):   
@@ -75,7 +95,6 @@ def parseSamplesheet(sheet):
     """
     getData=False
     getHeader=False
-    print("Parsing sample sheet" , sheet)
     idCol = -1
     nameCol=-1
     libCol=-1
@@ -102,7 +121,7 @@ def parseSamplesheet(sheet):
                         s = line.split(",")[1:]
                         for elem in s:
                             if elem != "":
-                                EXPERIMENT=sanitizeString(elem)
+                                EXPERIMENT=removeTrailingSlash( sanitizeString(elem) )
                                 break
                 if line.startswith("AdapterRead1,"): # one of the handful of syntactic differences between a bcl-convert sample sheet and a bcl2fastq sample sheet
                     ret="bcl-convert"
@@ -187,7 +206,6 @@ def parseFastqs(basedir):
     Input: a directory name with *.fastq.gz files AS MADE BY BCL2FASTQ2
     Output: none; updates the SAMPLES and OFFTARGETS data structures.
     """
-
     
     files=glob.glob(os.path.join(basedir, "*fastq.gz")) # note: later on we only consider read1 (_R1_). If there's a read2, the BWA will find it.
     SAMPLENAME=[os.path.basename(x) for x in files]
@@ -246,7 +264,7 @@ def parseFastqs(basedir):
                 inner['dirname'] = samp
             
             validFiles.append( os.path.join(basedir, x))
-    print("ParseFastqs: ", basedir, "\n", validFiles)             
+    #print("ParseFastqs: ", basedir, "\n", validFiles)             
     return validFiles
 
 def aggregate_fastqs(wildcards):
@@ -273,7 +291,7 @@ def glob_bams(wildcards):
     # it's unclear why I have to update the fastqs information (again)
     # but this is necessary to populate the SAMPLES and OFFTARGETS dictionaries.
     if len(SAMPLES) + len(OFFTARGETS)==0:
-        parseFastqs( os.path.join( wildcards.outdir, wildcards.rundir, "Fastqs"))
+        parseFastqs( os.path.join( wildcards.outdir, "Run_Fastqs", wildcards.rundir, "Fastqs"))
     
     if wildcards.samplename in SAMPLES:
         inner = SAMPLES[wildcards.samplename]
@@ -285,7 +303,7 @@ def glob_bams(wildcards):
         print("Wildcards are: ", wildcards)
         exit(1)
 
-    files = expand("{outdir}/{dirname}/{rundir}/Bams/{samplename}_{sampleindex}_{lane}.bam", samplename=wildcards.samplename, \
+    files = expand("{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}_{sampleindex}_{lane}.bam", samplename=wildcards.samplename, \
         sampleindex= inner['sampleindex'], lane=inner['lanes'], dirname=inner['dirname'],outdir=wildcards.outdir, rundir=wildcards.rundir, allow_missing=True)
     
   
@@ -296,13 +314,16 @@ def gather_all_reports(wildcards):
     Note this is run *after* the checkpoint
     this emits all files that should be created (at the level of the sample)
     """
-    
-    if "outdir" not in wildcards:
-        wildcards.outdir="." 
-    if "rundir" not in wildcards:
-        wildcards.rundir="."
+    global RUN
+    global EXPERIMENT
 
-    fqdir = os.path.join(wildcards.outdir, wildcards.rundir, "Fastqs") 
+    if "outdir" not in wildcards:
+        wildcards.outdir=EXPERIMENT 
+    if "rundir" not in wildcards:
+        wildcards.rundir=RUN
+
+    fqdir = os.path.join(wildcards.outdir, "Run_Fastqs", wildcards.rundir, "Fastqs") 
+    
     parseFastqs(fqdir)
     
     
@@ -310,10 +331,10 @@ def gather_all_reports(wildcards):
     
     for samp in SAMPLES.keys():
         files.extend( \
-            expand("{outdir}/{dirname}/{rundir}/Bams/{samplename}.la.md.bam", \
+            expand("{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.la.md.bam", \
             outdir=wildcards.outdir, rundir=wildcards.rundir, dirname=samp, samplename=samp)) # markdup-bams
         files.extend( \
-            expand("{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.{suffix}", \
+            expand("{outdir}/Sample_Data/{dirname}/{rundir}/Reports/{samplename}.la.md.{suffix}", \
             outdir=wildcards.outdir, rundir=wildcards.rundir, dirname=samp, samplename=samp,\
             suffix=["bqsr.demix.summary", "r1_fastqc.zip", "flagstat", "samstats.cov", "bqsr_summary.pdf"]))
             #mixure analysis, fastqc, samtools flagstat, samstats (coverage estimate), and bqsr-post hoc summary
@@ -321,13 +342,13 @@ def gather_all_reports(wildcards):
             
     for samp in OFFTARGETS.keys():
         files.extend( \
-            expand("{outdir}/{dirname}/{rundir}/Bams/{samplename}.la.md.bam", \
+            expand("{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.la.md.bam", \
             outdir=wildcards.outdir, rundir=wildcards.rundir, dirname="Offtargets", samplename=samp))# markdup-bams
         files.extend( \
-            expand("{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.flagstat",
+            expand("{outdir}/Sample_Data/{dirname}/{rundir}/Reports/{samplename}.la.md.flagstat",
             outdir=wildcards.outdir, rundir=wildcards.rundir, dirname="Offtargets", samplename=samp)) # flagstat
         files.extend( \
-            expand("{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.samstats.cov",
+            expand("{outdir}/Sample_Data/{dirname}/{rundir}/Reports/{samplename}.la.md.samstats.cov",
             outdir=wildcards.outdir, rundir=wildcards.rundir, dirname="Offtargets", samplename=samp)) # samstats 
     print(files)  
 
@@ -337,24 +358,37 @@ def bcl_complete(wildcards):
     """
     helper function; 
     The Novaseq makes a "CopyComplete.txt" file when, well, the copying is complete
-    while the MiSeq makes no such file. RunCompletionStatus.xml seems like equivalent, though
+    while the MiSeq makes no such file. RTAComplete seems like equivalent, though
     """
-    global BCLPATH
-    file=os.path.join(BCLPATH, "CopyComplete.txt")
+    global BCLDIR
+    file=os.path.join(BCLDIR, "CopyComplete.txt")
     if os.path.isfile(file):
         return file
-    return os.path.join(BCLPATH, "RunCompletionStatus.xml")
+    return os.path.join(BCLDIR, "RTAComplete.txt")
 
+
+# EXPERIMENT set here (from sample sheet)
+bclConverter=parseSamplesheet(SAMPLESHEET) # determines the name of the Experiment and the library prep; performs a sanity check on the samples
+
+# check to see if has been overloaded in the command line
+exp=removeTrailingSlash ( sanitizeString( config["Experiment"] )  )
+# command line trumps the sample sheet.
+if exp != "":
+    EXPERIMENT= exp
+    
+print("Converter: ", bclConverter)
+print("Experiment: ", EXPERIMENT)
+print("Bcldir: ", BCLDIR)
+print("Samplesheet: ", SAMPLESHEET)
 
 
 rule bcl:
     input:
-        expand("{outdir}/{rundir}/SampleSheet.csv", outdir=os.path.join(OUTDIR,EXPERIMENT), rundir=BCLDIR), # extract fastqs (successfully)...
-        expand("{outdir}/{rundir}/RunAnalysisComplete.txt", outdir=os.path.join(OUTDIR,EXPERIMENT), rundir=BCLDIR)
+        expand("{outdir}/Run_Fastqs/{rundir}/SampleSheet.csv", outdir=EXPERIMENT, rundir=BCLDIR), # extract fastqs (successfully)...
+        expand("{outdir}/Run_Fastqs/{rundir}/RunAnalysisComplete.txt", outdir=EXPERIMENT, rundir=BCLDIR)
     # set to either bcl2fastq or bcl-convert, depending on the format of the sample sheet
 
-bclConverter=parseSamplesheet(SAMPLESHEET) # determines the name of the Experiment and the library prep; performs a sanity check on the samples
-print(bclConverter , " is the converter")
+
 
 
 if bclConverter=="bcl2fastq":
@@ -364,14 +398,14 @@ if bclConverter=="bcl2fastq":
         params:
             rl=GX.getParam("bcl2fastq", "params"),
             samplesheet=SAMPLESHEET,
-            bclpath=BCLPATH,
+            bclpath=BCLDIR,
             binary=GX.getBinary("bcl2fastq"),
         threads:
             config["bcl2fastqParams"]["threads"]
         log:
-            "{outdir}/{rundir}/Fastqs/bcl2fastq.outerr"
+            "{outdir}/Run_Fastqs/{rundir}/Fastqs/bcl2fastq.outerr"
         output: 
-            "{outdir}/{rundir}/Fastqs/Stats/Stats.json"
+            "{outdir}/Run_Fastqs/{rundir}/Fastqs/Stats/Stats.json"
         shell:            
             """
             bn=`dirname {output}`  
@@ -385,15 +419,15 @@ elif bclConverter=="bcl-convert":
             bcl_complete
         params:
             samplesheet=SAMPLESHEET,
-            bclpath=BCLPATH,
+            bclpath=BCLDIR,
             obinary=GX.getBinary("bclconvert"),
             oparams=GX.getParam("bclconvert", "params")
         threads:
             config["bclconvertParams"]["threads"]
         log:
-            "{outdir}/{rundir}/Fastqs/bcl-convert.outerr"
+            "{outdir}/Run_Fastqs/{rundir}/Fastqs/bcl-convert.outerr"
         output: 
-            "{outdir}/{rundir}/Fastqs/Logs/FastqComplete.txt"
+            "{outdir}/Run_Fastqs/{rundir}/Fastqs/Logs/FastqComplete.txt"
         shell:
             """
             bn=`dirname {output}`  
@@ -409,8 +443,8 @@ rule gather_fastqs:
     input:
         aggregate_fastqs # updates the SAMPLES and OFFTARGETS dictionaries.
     output:
-        samplesheet="{outdir}/{rundir}/SampleSheet.csv",
-        version="{outdir}/{rundir}/version.txt"
+        samplesheet="{outdir}/Run_Fastqs/{rundir}/SampleSheet.csv",
+        version="{outdir}/Run_Fastqs/{rundir}/version.txt"
     params:
         samplesheet=SAMPLESHEET,
         version=config["Version"]
@@ -442,14 +476,14 @@ def getLibrary(wildcards):
 
 rule bwa_mem_map:
     input:
-        fq="{outdir}/{rundir}/Fastqs/{samplename}_{sampleindex}_{lane}_R1_001.fastq.gz",
-        samplesheet="{outdir}/{rundir}/SampleSheet.csv"
+        fq="{outdir}/Run_Fastqs/{rundir}/Fastqs/{samplename}_{sampleindex}_{lane}_R1_001.fastq.gz",
+        samplesheet="{outdir}/Run_Fastqs/{rundir}/SampleSheet.csv" # builds dependency to gather_fastqs
     output:
-        bam=temp("{outdir}/{dirname}/{rundir}/Bams/{samplename}_{sampleindex}_{lane}.bam") # note; no indexing required.
+        bam=temp("{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}_{sampleindex}_{lane}.bam") # note; no indexing required.
     wildcard_constraints:
         lane="L\d+"
     log:
-        "{outdir}/{dirname}/{rundir}/Logs/{samplename}_{sampleindex}_{lane}_bwa_mem.log"   
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Logs/{samplename}_{sampleindex}_{lane}_bwa_mem.log"   
     threads: config["bwamemParams"]["threads"]
     resources:
         mem_mb=config["samtoolsParams"]["mem_mb_sort"]
@@ -489,15 +523,15 @@ rule bwa_mem_map:
 
 # alpha version of the pipeline had two separate steps; merge, then left align.
 # leftalign takes multiple input files, soo, let's combine those operations.
-#{outdir}/{dirname}/{rundir}/Bams/{samplename}_{sampleindex}_{lane}.bam"
+#{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}_{sampleindex}_{lane}.bam"
 rule merge_and_leftalign_bams:
     input:
         glob_bams
     output:
-        bam=temp("{outdir}/{dirname}/{rundir}/Bams/{samplename}.la.bam"),
-        bai=temp("{outdir}/{dirname}/{rundir}/Bams/{samplename}.la.bai")
+        bam=temp("{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.la.bam"),
+        bai=temp("{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.la.bai")
     log:
-        "{outdir}/{dirname}/{rundir}/Logs/{samplename}.merge_leftalign.log"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Logs/{samplename}.merge_leftalign.log"
     params:
         binary=GX.getBinary("gatk"),
         ref=hg38
@@ -508,40 +542,40 @@ rule merge_and_leftalign_bams:
 
 rule markdup_bams:
     input:
-        "{outdir}/{dirname}/{rundir}/Bams/{samplename}.la.bam"
-    output:
-        "{outdir}/{dirname}/{rundir}/Bams/{samplename}.la.md.bam"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.la.bam"
+    output: #TODO: Temporary for all bams except Offtargets?
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.la.md.bam"
     threads: config["sambambaParams"]["threads"]
     params:
         tmpprefix=config["tmpdirprefix"],
         binary=GX.getBinary("sambamba")
     log:
-        "{outdir}/{dirname}/{rundir}/Logs/{samplename}.markdup.log"   
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Logs/{samplename}.markdup.log"   
     shell:
         "{params.binary} markdup  --tmpdir={params.tmpprefix} -l 9 -t {threads} {input} {output} 2> {log}"
  
 
 rule make_bam_flagstats:
     input:
-        "{outdir}/{dirname}/{rundir}/Bams/{samplename}.la.md.bam"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.la.md.bam"
     output:
-        "{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.flagstat"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Reports/{samplename}.la.md.flagstat"
     threads: 
         config["samtoolsParams"]["samtoolsThreads"]
     params:
         binary=samtools
     log:
-        "{outdir}/{dirname}/{rundir}/Logs/{samplename}.flagstat.log"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Logs/{samplename}.flagstat.log"
     shell:
         "{params.binary} flagstat -@ {threads}  {input} > {output} 2> {log}"
 
 rule make_bam_samstats:
     input:
-        "{outdir}/{dirname}/{rundir}/Bams/{samplename}.la.md.bam"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.la.md.bam"
     output:
-        "{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.samstats"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Reports/{samplename}.la.md.samstats"
     log:
-        "{outdir}/{dirname}/{rundir}/Logs/{samplename}.la.md.samstats.log"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Logs/{samplename}.la.md.samstats.log"
     params:
         binary=GX.getBinary("samstats"),
         panel=GX.getParam("samstats", "panel")
@@ -550,11 +584,11 @@ rule make_bam_samstats:
 
 rule make_bam_cov:
     input:
-        "{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.samstats"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Reports/{samplename}.la.md.samstats"
     output:
-        "{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.samstats.cov"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Reports/{samplename}.la.md.samstats.cov"
     log:
-        "{outdir}/{dirname}/{rundir}/Logs/{samplename}.la.md.samstatscov.log"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Logs/{samplename}.la.md.samstatscov.log"
     params:
         binary=GX.getSummarizer("samstats")
     shell:
@@ -562,11 +596,11 @@ rule make_bam_cov:
 
 rule bam_estimate_mix:
     input:
-        "{outdir}/{dirname}/{rundir}/Bams/{samplename}.la.md.bqsr.bam"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.la.md.bqsr.bam"
     output:
-        "{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.bqsr.demix"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Reports/{samplename}.la.md.bqsr.demix"
     log:
-        "{outdir}/{dirname}/{rundir}/Logs/{samplename}.la.md.mf.bqsr.log"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Logs/{samplename}.la.md.mf.bqsr.log"
     params:
         binary=GX.getBinary("demixtify"),
         panel=GX.getParam("demixtify", "panel")
@@ -577,11 +611,11 @@ rule bam_estimate_mix:
     
 rule mix_summary:
     input:
-        "{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.bqsr.demix"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Reports/{samplename}.la.md.bqsr.demix"
     output:
-        "{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.bqsr.demix.summary"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Reports/{samplename}.la.md.bqsr.demix.summary"
     log:
-        "{outdir}/{dirname}/{rundir}/Logs/{samplename}.la.md.mf.bqsr.summary.log"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Logs/{samplename}.la.md.mf.bqsr.summary.log"
     params:
         binary=GX.getSummarizer("demixtify")
     shell:
@@ -590,17 +624,17 @@ rule mix_summary:
 # note: as written, this cannot be applied to the off-target bams. 
 rule fastqc:
     input:
-        "{outdir}/{dirname}/{rundir}/Bams/{samplename}.la.md.bam"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.la.md.bam"
     output:
-        r2="{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.r2_fastqc.html",
-        o2="{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.r2_fastqc.zip",
-        r1="{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.r1_fastqc.html",
-        o1="{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.r1_fastqc.zip"
+        r2="{outdir}/Sample_Data/{dirname}/{rundir}/Reports/{samplename}.la.md.r2_fastqc.html",
+        o2="{outdir}/Sample_Data/{dirname}/{rundir}/Reports/{samplename}.la.md.r2_fastqc.zip",
+        r1="{outdir}/Sample_Data/{dirname}/{rundir}/Reports/{samplename}.la.md.r1_fastqc.html",
+        o1="{outdir}/Sample_Data/{dirname}/{rundir}/Reports/{samplename}.la.md.r1_fastqc.zip"
     params:
         samtools_binary=samtools,
         fastqc_binary=GX.getBinary("fastqc")
     log:
-        "{outdir}/{dirname}/{rundir}/Logs/{samplename}.fastqc.log"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Logs/{samplename}.fastqc.log"
     shell: # note: this cannot be applied to the UDI- data.
         """
         outdir=`dirname {output.r1}`
@@ -620,11 +654,11 @@ rule fastqc:
 
 rule gatk_learn_bqsr_table:
     input:
-        "{outdir}/{dirname}/{rundir}/Bams/{samplename}.la.md.bam"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.la.md.bam"
     output:
-        "{outdir}/{dirname}/{rundir}/Bams/{samplename}.recal.csv"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.recal.csv"
     log:
-        "{outdir}/{dirname}/{rundir}/Logs/{samplename}.bqsr.recal.log"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Logs/{samplename}.bqsr.recal.log"
     params:
         binary=GX.getBinary("gatk"),
         args=GX.getParam("gatk", "bqsrargs"),
@@ -635,12 +669,12 @@ rule gatk_learn_bqsr_table:
 
 rule gatk_apply_bqsr:
     input:
-        bam="{outdir}/{dirname}/{rundir}/Bams/{samplename}.la.md.bam",
-        recal_file="{outdir}/{dirname}/{rundir}/Bams/{samplename}.recal.csv"
+        bam="{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.la.md.bam",
+        recal_file="{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.recal.csv"
     output:
-        "{outdir}/{dirname}/{rundir}/Bams/{samplename}.la.md.bqsr.bam"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.la.md.bqsr.bam"
     log:
-        "{outdir}/{dirname}/{rundir}/Logs/{samplename}.bqsr.apply.log"
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Logs/{samplename}.bqsr.apply.log"
     params:
         binary=GX.getBinary("gatk"),
         ref=hg38,
@@ -655,13 +689,13 @@ rule gatk_apply_bqsr:
 # note: requires R packages: gplots and gsalib (legacy code; may be difficult to install)
 rule plot_gatk_bqsr:
     input:
-        bam="{outdir}/{dirname}/{rundir}/Bams/{samplename}.la.md.bqsr.bam",
-        recal_file="{outdir}/{dirname}/{rundir}/Bams/{samplename}.recal.csv"
+        bam="{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.la.md.bqsr.bam",
+        recal_file="{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.recal.csv"
     output:
-        report="{outdir}/{dirname}/{rundir}/Reports/{samplename}.la.md.bqsr_summary.pdf",
-        posthoc_file="{outdir}/{dirname}/{rundir}/Bams/{samplename}.recalafter.csv"
+        report="{outdir}/Sample_Data/{dirname}/{rundir}/Reports/{samplename}.la.md.bqsr_summary.pdf",
+        posthoc_file="{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.recalafter.csv"
     log:
-        "{outdir}/{dirname}/{rundir}/Logs/{samplename}.bqsr.plots.log"            
+        "{outdir}/Sample_Data/{dirname}/{rundir}/Logs/{samplename}.bqsr.plots.log"            
     params:
         binary=GX.getBinary("gatk"),
         args=GX.getParam("gatk", "bqsrargs"),
@@ -674,17 +708,25 @@ rule plot_gatk_bqsr:
         """    
   
 
-
+# for reproducibility
+# record the config file used, the exact command line arguments, and the version number (this script)
 rule complete:
     input:
         aggregate_fastqs,
         gather_all_reports
     output:
-        "{outdir}/{rundir}/RunAnalysisComplete.txt"
+        marker="{outdir}/{rundir}/RunAnalysisComplete.txt",
+        args="{outdir}/{rundir}/args.txt",
+        cfile="{outdir}/{rundir}/config.csv"
+    params:
+        configFile=configpath,
+        versionNumber=VERSION,
+        arguments=" ".join(sys.argv)
     shell:
         """
-        echo input
-        touch {output}
+        echo {params.arguments} > {output.args}
+        cp {params.configFile} {output.cfile}
+        echo "Version: " {params.versionNumber} > {output.marker}
         """
 
         
