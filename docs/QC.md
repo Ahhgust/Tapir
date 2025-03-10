@@ -72,4 +72,4 @@ Higher-order effects matter too-- a run with poor phasing impacts all samples; l
       -  One way that the Undetermined files can be big if you have Ns in your adapter sequences. Consider looking at the "I1" and "I2" fastq.gz files. These files are fastqs for the sample indexes themselves. If (for example) you have >2 Ns in them, you'll probably fail to demultiplex the run. 
 	  -  Tapir provides `deML` [github link](https://github.com/grenaud/deML), which demultiplexes by maximum likelihood. It isn't implemented in to Tapir as a workflow, but sophisticated users can consider using it.
 	  
-For additional QC steps, see [QC.md](QC.md)	 
+For troubleshooting, see [General_Troubleshooting.md](General_Troubleshooting.md)	 
