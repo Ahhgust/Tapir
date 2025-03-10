@@ -6,8 +6,9 @@ VERSION=0.30
 # Added support for the MiSeq (by changing the CopyComplete.txt dependency when extracting BCLs)
 
 ROOT=os.path.abspath(  os.path.join(workflow.current_basedir, ".."))
-configfile: os.path.join(ROOT, "configs", "config_v_2_standard.yaml")
 
+# defaults
+configfile: os.path.join(ROOT, "configs", "config_v_2_standard.yaml")
 configpath=os.path.join(ROOT, "configs", "config_v_2_standard.yaml")
 i=0
 
@@ -389,8 +390,6 @@ rule bcl:
     # set to either bcl2fastq or bcl-convert, depending on the format of the sample sheet
 
 
-
-
 if bclConverter=="bcl2fastq":
     checkpoint extract_fastqs:
         input:
@@ -540,11 +539,11 @@ rule merge_and_leftalign_bams:
         shell("{params.binary} --java-options {config[gatkParams][javaoptions]} LeftAlignIndels --verbosity ERROR --QUIET true -R {params.ref} {inputs_all} -O {output.bam} &> {log}")   
 
 
+
 rule markdup_bams:
     input:
         "{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.la.bam"
-    output: #TODO: Temporary for all bams except Offtargets?
-        "{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.la.md.bam"
+    output: temp("{outdir}/Sample_Data/{dirname}/{rundir}/Bams/{samplename}.la.md.bam")
     threads: config["sambambaParams"]["threads"]
     params:
         tmpprefix=config["tmpdirprefix"],

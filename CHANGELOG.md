@@ -5,6 +5,9 @@
 3/2025
 -  Support for multiple config files added.
 -  Tape backup routines added (see: tape_deck/)
+-  .la.md bam files are set as temporary files
+   -  use --notemp (snakemake directive) to keep all temporary files instead
+	
 	
 2/2025
 -  Added support for FASTQ input (as well as BCL)

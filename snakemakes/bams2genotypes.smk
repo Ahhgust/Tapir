@@ -45,16 +45,22 @@ bams=glob.glob(f"*/Bams/*{suffix}.bam")
 if len(bams)==0:
     print("No bam files detected?!", "Are you sure you're in right directory?", sep="\n", file=sys.stderr)
     exit(1)
-#TODO: refine the BAM list using tags/decorators
-#TODO: Check for {outdir}/{rundir}/RunAnalysisComplete.txt"
     
 
 def bamGenerator(wildcards):
     """
     Convenience function; lists all of the final merged/markdup bams needed
     """
-    return expand("{samplename}.{suffix}.merged.md.bam", samplename=sampleName, suffix=suffix)
-
+    # the BAM itself
+    bams = expand("{samplename}.{suffix}.merged.md.bam", samplename=sampleName, suffix=suffix)
+    # additional summaries of the BAM file
+    bams.extend( \
+        expand("Final_Reports/{samplename}.{suffix}.merged.md.demix.summary", samplename=sampleName, suffix=suffix) )
+    bams.extend( \
+        expand("Final_Reports/{samplename}.{suffix}.merged.md.samstats.cov", samplename=sampleName, suffix=suffix) )
+    bams.extend( \   
+         expand("Final_Reports/{samplename}.{suffix}.merged.md.flagstat", samplename=sampleName, suffix=suffix) )
+    return bams
 
 
 def listBams(wildcards):
@@ -77,15 +83,15 @@ print("Path: ", ROOT)
 wildcard_constraints:
     suffix=suffix
 
-rule call_bcftools:
-    input:
-        bamGenerator,
-        expand("Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.{outtype}.tsv.gz", samplename=sampleName, suffix=suffix, caller=['bcftools'], outtype=["23andme", "23andme.snps"])
-
 rule call_glimpse2:
     input:
         bamGenerator,
         expand("Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.{outtype}.tsv.gz", samplename=sampleName, suffix=suffix, caller=['glimpse2'], outtype=["23andme", "23andme.snps"])
+
+rule call_bcftools:
+    input:
+        bamGenerator,
+        expand("Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.{outtype}.tsv.gz", samplename=sampleName, suffix=suffix, caller=['bcftools'], outtype=["23andme", "23andme.snps"])
 
 # equivalent to call_glimpse2 and call_bcftools
 rule call_glimpse2_and_bcftools:
@@ -510,4 +516,70 @@ rule hg19_to_23andme_snps:
         {params.binary} {params.filt} -o | gzip -9 > {output} )  2> {log}
         """
 
+# Taken from bcl2bam; IO is modified.
+# Consider using modules in future releases...
+rule make_bam_samstats:
+    input:
+        "{samplename}.{suffix}.merged.md.bam"
+    output:
+        "Final_Reports/{samplename}.{suffix}.merged.md.samstats"
+    log:
+        "Logs/{samplename}.{suffix}.merged.md.samstats.log"
+    params:
+        binary=GX.getBinary("samstats"),
+        panel=GX.getParam("samstats", "panel")
+    shell:
+        "{params.binary} {input} {params.panel} > {output} 2> {log}"
 
+rule make_bam_cov:
+    input:
+        "Final_Reports/{samplename}.{suffix}.merged.md.samstats"
+    output:
+        "Final_Reports/{samplename}.{suffix}.merged.md.samstats.cov"
+    log:
+        "Logs/{samplename}.{suffix}.merged.md.samstatscov.log"
+    params:
+        binary=GX.getSummarizer("samstats")
+    shell:
+        "{params.binary} {input}  > {output} 2> {log}"
+
+rule bam_estimate_mix:
+    input:
+        "{samplename}.{suffix}.merged.md.bam"
+    output:
+        "Final_Reports/{samplename}.{suffix}.merged.md.demix"
+    log:
+        "Logs/{samplename}.{suffix}.merged.md.mf.log"
+    params:
+        binary=GX.getBinary("demixtify"),
+        panel=GX.getParam("demixtify", "panel")
+    threads: 
+        config["demixtifyParams"]["threads"]
+    shell:
+        "{params.binary} -t {threads} -b {input} -v  {params.panel} > {output} 2> {log}"
+    
+rule mix_summary:
+    input:
+        "Final_Reports/{samplename}.{suffix}.merged.md.demix"
+    output:
+        "Final_Reports/{samplename}.{suffix}.merged.md.demix.summary"
+    log:
+        "Logs/{samplename}.{suffix}.merged.md.mf.summary.log"
+    params:
+        binary=GX.getSummarizer("demixtify")
+    shell:
+        "{params.binary} {input} > {output} 2> {log}"
+        
+rule make_bam_flagstats:
+    input:
+        "{samplename}.{suffix}.merged.md.bam"
+    output:
+        "Final_Reports/{samplename}.{suffix}.merged.md.flagstat"
+    threads: 
+        config["samtoolsParams"]["samtoolsThreads"]
+    params:
+        binary=GX.getParam("samtools", "binary"),
+    log:
+        "Logs/{samplename}.{suffix}.merged.md..flagstat.log"
+    shell:
+        "{params.binary} flagstat -@ {threads}  {input} > {output} 2> {log}"
