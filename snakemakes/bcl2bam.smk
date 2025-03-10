@@ -72,12 +72,23 @@ if "SampleSheet" in config:
 EXPERIMENT=""
     
 # TODO: ADD CHECK FOR FASTQ INPUT
-if not os.path.isdir(config["Bcldir"]):
+if not os.path.isdir(config["Bcldir"]) and "Fastqdir" not in config:
     print("You specified a directory that doesn't exist: ", config["Bcldir"], file=sys.stderr)
     exit(1)
     
+# FYSA, snakemake does not like trailing slashes;
+# even if they're syntactically preferred (as a unix convention)
 BCLDIR=removeTrailingSlash( config["Bcldir"] )
 RUN=os.path.basename(BCLDIR)
+
+# this is a lie, but a necessary one...
+# in short, we make Fastq input look like BCL input (but after the Fastqs have been extracted from BCLs)
+if "Fastqdir" in config:
+    if not os.path.isdir(config["Fastqdir"]):
+        print("You're trying to use FASTQ files (shame on you). And you failed to specify a (valid/real) *directory*. Please fix the directory issue...", config["Fastqdir"], file=sys.stderr)
+        exit(1)       
+    BCLDIR=removeTrailingSlash( config["Fastqdir"] )
+    RUN=os.path.basename(BCLDIR)   
 
 # if the sample sheet is not found
 if not os.path.isfile(SAMPLESHEET):   
@@ -367,15 +378,59 @@ def bcl_complete(wildcards):
         return file
     return os.path.join(BCLDIR, "RTAComplete.txt")
 
+def touchy(filename):
+    """
+    unix touch (but not really)
+    makes an empty file iff it doesn't exist.
+    does NOT update the timestamp (unlike unix's touch)
+    """
+    if not os.path.isfile(filename):
+        han=open(filename, "w")
+        han.close()
+
 
 # EXPERIMENT set here (from sample sheet)
 bclConverter=parseSamplesheet(SAMPLESHEET) # determines the name of the Experiment and the library prep; performs a sanity check on the samples
 
-# check to see if has been overloaded in the command line
+# check to see if the exeperiment (name) has been overloaded in the command line
 exp=removeTrailingSlash ( sanitizeString( config["Experiment"] )  )
 # command line trumps the sample sheet.
 if exp != "":
     EXPERIMENT= exp
+
+# Fastq input?
+if "Fastqdir" in config:
+    print("Fastq input detected...")
+    fastqs=glob.glob(os.path.join(BCLDIR, "*fastq.gz"))
+    for fq in fastqs:
+        sp= os.path.basename(fq).split("_")
+        if len(sp) != 5:
+            print("Fastq files MUST be made by bcl2fastq/bcl-convert (or made to look like it). The expetect format is: {samplename}_{sampleid}_{lane}_{R?}_001.fastq.gz", "not", fq, file=sys.stderr, sep="\n")
+            exit(1)
+            
+    # a little unseemly; write into the Fastq directory.
+    touchy( os.path.join(BCLDIR, "CopyComplete.txt") )
+    d=os.path.join(EXPERIMENT, "Run_Fastqs", RUN, "Fastqs", "Stats")
+    
+    if os.system(f"mkdir -p {d}"):
+        print(f"Failed to make directory: {d}")
+        exit(1)
+    
+    # make the Fastq directory (as if Tapir had made it from the BCL files...)
+    #touchy( os.path.join(d, "Stats.json") ) # made by rule bcl:
+    d=os.path.dirname(d) # trim off the Stats
+    for fq in fastqs:
+        apath=os.path.abspath(fq)
+        if os.system(f"ln -sf {apath} {d}"):
+            print("Failed to make symlink", apath, d, sep="\n", file=sys.stderr)
+            exit(1)
+    
+    # last but not least, put the sample sheet in the correct location
+    d=os.path.dirname(d) # trim off the Fastqs/
+    d=os.path.join(d, "SampleSheet.csv")
+    os.system(f"cp -L {SAMPLESHEET} {d}")
+    bclConverter='none'
+    
     
 print("Converter: ", bclConverter)
 print("Experiment: ", EXPERIMENT)
@@ -433,7 +488,25 @@ elif bclConverter=="bcl-convert":
             bn=`dirname $bn` # removes Logs/FastqComplete.txt
             {params.obinary} {params.oparams} --bcl-input-directory {params.bclpath} --output-directory $bn --bcl-num-conversion-threads {threads} --sample-sheet {params.samplesheet} 2> {log}
             """
-
+elif bclConverter=='none': # in this case, the fastqs are already made...
+    checkpoint extract_fastqs:
+        input:
+            bcl_complete
+        params:
+            rl=GX.getParam("bcl2fastq", "params"),
+            samplesheet=SAMPLESHEET,
+            bclpath=BCLDIR,
+            binary=GX.getBinary("bcl2fastq"),
+        threads:
+            1
+        log:
+            "{outdir}/Run_Fastqs/{rundir}/Fastqs/bcl2fastq.outerr"
+        output: 
+            "{outdir}/Run_Fastqs/{rundir}/Fastqs/Stats/Stats.json"
+        shell:            
+            """
+            touch {output} 2> {log} 
+            """
 else:
     print("Should never happen; failed to deduce the right bcl to fastq converter!?", file=sys.stderr)
     exit(1)
@@ -449,7 +522,7 @@ rule gather_fastqs:
         version=config["Version"]
     shell:
         """
-        cp {params.samplesheet} {output.samplesheet} && echo "bcl2bam version " {params.version} > {output.version}
+        cp -L {params.samplesheet} {output.samplesheet} && echo "bcl2bam version " {params.version} > {output.version}
         """
 
 
@@ -724,7 +797,7 @@ rule complete:
     shell:
         """
         echo {params.arguments} > {output.args}
-        cp {params.configFile} {output.cfile}
+        cp -L {params.configFile} {output.cfile}
         echo "Version: " {params.versionNumber} > {output.marker}
         """
 

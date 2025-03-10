@@ -32,7 +32,7 @@ A more complete set of flags are found in the config.yaml files (defaults to: $T
 ## Repeated measurements
 Tapir supports repeated measurements on a sample. <br>
 Tapir is also incredibly ornery about it. <br>
-Repeat after me: If you want merge repeated measurements, <br> **They must have the same sample name** <br>
+Repeat after me: If you want merge repeated measurements, <br><br> **They must have the same sample name** <br><br>
 e.g.,
 It's not <br>
 *Sample1_Replicate1* <br>
@@ -45,6 +45,15 @@ But it is instead: <br>
 Now, if you never ever want to merge the two replicates, the naming above is fine. <br>
 <br>
 For the record, this isn't some rule that I made up; this rule is a byproduct of how `Read Groups` are used in genomics. See the *Read Groups* section below.
+<br>
+And for the record, if you wish to merge samples and have mis-named them, the easiest thing to do is just name them correctly (in the sample sheet) and rerun everything.
+That is heavy handed, but in fairness, that also makes more work for the computer to do (so really, who cares?).
+You can force Tapir to evaluate multiple bams (in the same sample directory) with different/incorrect sample information. Tapir just evaluates: <br>
+`*/Bams/Final_Bams/*la.md.bqsr.bam` <br>
+so with some creative symbolic linking, you can force it to merge multiple (disparate) files. <br>
+Choosing to do this is dangerous and largely untested; on paper, Glimpse should work, while BCFtools (genotyping) would require some changes. 
+More importantly, the results will be ( a little bit ) wrong if (and in principle, only if) you sequence the same library multiple times (and fail to specify the right sample identifier).
+Said more concretely, you would miss some PCR duplicates...
 
 ## Custom Configurations
 Tapir supports limited flexibility. Below we describe what things can (and probably should) be configured.
@@ -61,11 +70,11 @@ Note that the two configs only differ at a single line; the difference (`diff`) 
 >     glimpse2: "-x -b 1.7 -p 0.95" # CHANGED HERE (from standard)(bcf223andme.py) filters for glimpse2; Include the X; Bayes Factor > 1.7; Genotype Posterior > 0.95
 
 ```
-ie, one use a minimum posterior probability of 0.99; ultralow drops that to 0.95 (increasing call-rate at the cost of increasing the error rate)
+ie, one use a minimum posterior probability of 0.99; ultralow drops that to 0.95 (increasing both the call-rate and the error rate, which you might have to do if you're below the minimum call rate)
 (in context, this section of the config describes the filtering performed on `bcf223andme.py`; in words bcf to 23 and me.)
 
 ### Local storage
-Tapir write (some of the) temporary files to local storage devices. In short, if you have an NVMe (or traditional SSD) mounted someplace, update:
+Tapir writes (many) temporary files to local storage devices. In short, if you have an NVMe (or traditional SSD) mounted someplace, update:
 <br>
 `/tmpdirprefix: "/tmp"` <br>
 in the config file(s). 
@@ -75,13 +84,13 @@ Better yet, set `/tmp` to the mount location...
 
 ### Multithreading
 In addition, many of the tools that Tapir uses supports some level of multithreading; 
-the values in place work reasonably well on our system. They may not work well on yours. <br>
+the values in place work reasonably well on our system (a 256-core beast). They may not work well on yours. <br>
 For example, you likely don't want the number of threads requested; e.g., `threads: 256`, to exceed what your unix system actually has. 
 Consult your cpuinfo file (e.g., `tail -n 40 /proc/cpuinfo`) if you are unsure of how many horses you have.
 
 ### Read groups
 Genomic tools use *Read Groups* [External link](https://gatk.broadinstitute.org/hc/en-us/articles/360035890671-Read-groups) to keep track of samples, libraries, and other components of sequencing.
-Tapir embeds read-group information when BWA-mem is invoked. Only one parameter, `LB` (the library identifier), can be difficult to glean. 
+Tapir embeds read-group information when BWA-mem is invoked. Only one parameter, `LB` (the library identifier), can be difficult to glean from a FASTQ record. 
 By default, Tapir uses the `"I7_Index_ID"` in the sample sheet and treats that as the identifier. This parameter can be changed in the `config.yaml` file used by Tapir.
 <br>
 Why does this matter? It mostly doesn't, however, if you are merging multiple BAMs, PCR duplicates can occur both within and between BAMs; 
@@ -89,6 +98,8 @@ specifically, if you take the same library and sequence it twice, the LB code sh
 using two different library preps, `LB` (within subjects) should be different. Using the `i7_Index_ID` is safe for the first scenario (same library sequenced twice), but it may or may not be true of the second.
 That said, the consequences of calling two different libraries the "same" library are pretty minimal; you might artificially call a few more duplicate reads... but that's a pretty minor issue. 
 If you want, however, you can include some column in the sample sheet and dedicate it to `LB`; simply modify your config file accordingly!
+<br>
+Just for utter clarity, Tapir creates (and otherwise assumes) that all BAM files are single-sample (no multisample BAM files are permitted).
 
 ## Notes on paths:
 the config file assumes one of three kind of paths when referring to some file:

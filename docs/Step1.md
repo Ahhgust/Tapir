@@ -12,7 +12,7 @@ In words:
    -  bcl2fastq (MiSeq, NovaSeq, HiSeq...) **OR**
    -  bcl-convert (NextSeq, ...)
       -  Which is chosen depends on the format of the SampleSheet.
--  In either case, Tapir will demultiple
+-  In either case, Tapir will demultiplex
    -  Samples (per lane) **AND**
    -  Indexes (ie, indexes without an accompanying sample; useful for detecting carryover)
 -  All fastqs are aligned using BWA mem.
@@ -32,20 +32,20 @@ In words:
       -  Which generates both a detailed report (.demix) AND
       -  a summary
 -  The final bam has been left-aligned around indels (.la), duplicates have been marked (.md), and BQSR has been applied (.bqsr).
-
+-  All intermediate bams are deleted (marked as temporary files)
+   -  Temporary files can be retained if `--nt` is used (`snakemake --nt ...`)
+   -  Unused Indexes' BAM files do not undergo bqsr; they are made, summarized, then deleted.
+   -  Use the `Reports/*flagstat` and `Reports/*cov` files to identify problems.
+   
 ## How to
 Tapir is a snakemake workflow; snakemake lets us (easily) stitch all of these tools together, as well, snakemake keeps track of program "state". eg, if the power is turned off, snakemake can deduce what it was doing, and restart computation at the appropriate location.
 <br>
-An Illumina instrument will (by default) write to a directory called "Output". <br>
-First, `cd` that directory. On our system, that amounts to:
-```
-cd /eva/staging/Novaseq/Novaseq/Output/
-```
-Suppose a sequencing run just finished; let's call it: `250103_A01324_0120_BHWGY2DMXY`
-
+Suppose a sequencing run just finished; let's call it: `250103_A01324_0120_BHWGY2DMXY` and it lives in a directory called: <br>
+`/eva/staging/Novaseq/Novaseq/Output/`
+<br>
 First, attempt a dry-run (-n)
 ```
-snakemake -n  -s /eva/codebase/snakemakes/bcl2bam.smk  -c256 --config Bcldir=250103_A01324_0120_BHWGY2DMXY Outdir=/eva/datums/cooked/NovaSeq001/2025/WGSValidation Experiment=Sensitivity
+snakemake -n  -s $TAPIR/snakemakes/bcl2bam.smk  -c256 --config Bcldir=/eva/staging/Novaseq/Novaseq/Output/250103_A01324_0120_BHWGY2DMXY Experiment=/eva/datums/cooked/NovaSeq001/2025/WGSValidation/Sensitivity
 echo $?
 ```
 
@@ -59,13 +59,9 @@ Parameters (ie, things that start with a "-") of note:
    -  Bcldir=
       - Set this to the BCL directory you want to extract
          -  In the case of the NovaSeq, a "CopyComplete.txt" file is expected
-   -  Outdir=
-      -  Set this to the (base) directory;
    -  Experiment=
          -  This *can* be set in the SampleSheet (Experiment= ...)
          -  Set this to the (parent) directory.
-         -  In the above, results are written to:
-	 -  `/eva/datums/cooked/NovaSeq001/2025/WGSValidation/Sensitivity/250103_A01324_0120_BHWGY2DMXY`
    - Optional 
       - Samplesheet=
          -  Provide a path (and filename) for a different sample sheet.
@@ -81,7 +77,7 @@ The dry-run will also parse the provided sample sheet; there are a lot of ways t
 If your dry-run is successful, let's run Tapir for real. I recommend:
 
 ```
-nohup snakemake -s /eva/codebase/snakemakes/bcl2bam.smk  -c256 --config Bcldir=250103_A01324_0120_BHWGY2DMXY Outdir=/eva/datums/cooked/NovaSeq001/2025/WGSValidation Experiment=Sensitivity &
+nohup snakemake -s $TAPIR/snakemakes/bcl2bam.smk  -c256 --config Bcldir=/eva/staging/Novaseq/Novaseq/Output/250103_A01324_0120_BHWGY2DMXY Experiment=/eva/datums/cooked/NovaSeq001/2025/WGSValidation/Sensitivity &> log.outerr &
 ```
 
 Which runs the command in the background (trailing &) and lets you exit/logout of the shell without aborting the call (nohup; no hardware interrupt)
@@ -91,11 +87,10 @@ Note that when Step 1 completes, that would be a good time to evaluate both samp
 As well, run-level metrics are of key importance.
 
 ### Files made
-
-Step1 of Tapir takes a single run, and creates demultiplexed results; one for each sample. Additionally, "Offtargets" data are created; these correspond to fastqs records that are supported by your library prep method, but you *shouldn't* see any results for. Because demultiplexing is imperfect (really, we observe reads with error), some (tiny amount) of data may be present, anyways.
-
-/eva/datums/cooked/NovaSeq001/2025/WGSValidation
+In general, the directory structure looks like:
+![DirStruct](../images/DirStructure.png)
 
 ## TMI
-Snakemake workflows are best implemented without arguments (ie, things that change how the programs are run). Tapir does not entirely adhere to this philosphy. Specifically, in Step 1, a traditional Snakemake workflow would write to the BCL directory (to preserve state). That is a bad idea; the original data should be treated as a WORM (write once, read many times); that way it can be easily backed up as soon as it comes off the instrument (and MD5s and whatnot will match).
+Snakemake workflows are typically implemented without arguments (ie, things that change how the programs are run). Tapir does not entirely adhere to this philosophy, and it provides meta information so that how the workflow was run can be easily tracked. 
+Specifically, in Step 1, a traditional Snakemake workflow would write to the BCL directory (to preserve state). That is a bad idea; the original data should be treated as a WORM (write once, read many times); that way it can be easily backed up as soon as it comes off the instrument (and MD5s and whatnot will match).
 
