@@ -19,7 +19,7 @@ In practice, Tapir simply runs a bunch of UNIX command in a particular order. By
 |  | call | -Am -C alleles -P 0. | keep alt alleles, multiallelic calling, limit to the alleles listed, disable the prior. |
 | samtools | flagstat | | |
 | GLIMPSE2 | phase/ligate | --mapq20 | Chunk sizes are set to twice the default. |
-| DeepVariant | | --model_type=WGS | Available in Tapir; makes VCFs/gVCFs only |
+| DeepVariant | | --model_type=WGS | Available in Tapir; makes VCFs/gVCFs only (no 23andme files) |
 | Demixtify  | |  | Estimates the mixture fraction using 586,670 autosomal SNPs from the GSA panel |
 | samstats.py* | | | Estimates the mean read depth (an estimate of coverage) using the GSA10K panel |
 | bcf223andme.py** | | BCFtools input: -x -q 20 GLIMPSE input: -x -b 1.7 -p 0.99| Prefiltered with bcftools view -e "INFO/OriginalContig!=CHROM" And bcftools norm -m+ |
@@ -27,16 +27,57 @@ In practice, Tapir simply runs a bunch of UNIX command in a particular order. By
 
 Note flags affecting threading/multiprocessing/compression are not listed above. That information can be gleaned from the config.yaml file, however.
 
-A more complete set of flags are found in the config.yaml files (snakemakes/config_v2_1.yaml.)
+A more complete set of flags are found in the config.yaml files (defaults to: $TAPIR/snakemakes/config_v_2_standard.yaml.)
+
+## Repeated measurements
+Tapir supports repeated measurements on a sample. <br>
+Tapir is also incredibly ornery about it. <br>
+Repeat after me: If you want merge repeated measurements, <br> **They must have the same sample name** <br>
+e.g.,
+It's not <br>
+*Sample1_Replicate1* <br>
+and <br>
+*Sample1_Replicate2* <br>
+But it is instead: <br>
+*Sample1*
+<br>
+<br>
+Now, if you never ever want to merge the two replicates, the naming above is fine. <br>
+<br>
+For the record, this isn't some rule that I made up; this rule is a byproduct of how `Read Groups` are used in genomics. See the *Read Groups* section below.
 
 ## Custom Configurations
-Tapir uses a config.yaml file (with some version number).
-The config yaml files provide come useful constants, including:
+Tapir supports limited flexibility. Below we describe what things can (and probably should) be configured.
+### Configuration files.
+Tapir pulls command-line options from a "config" (YAML) file.
+A good place to house them is in $TAPIR/configs. We provide a few configs with TAPIR. One is the default 
+(`config_v_2_standard.yaml`) and one is for "ultralow" WGS (`config_v_2_ultralow.yaml`). 
+Note that the two configs only differ at a single line; the difference (`diff`) is:
+```
+(tapir) [augustw@hal configs]$ diff config_v_2_standard.yaml config_v_2_ultralow.yaml
+186c186
+<     glimpse2: "-x -b 1.7 -p 0.99" # (bcf223andme.py) filters for glimpse2; Include the X; Bayes Factor > 1.7; Genotype Posterior > 0.99
+---
+>     glimpse2: "-x -b 1.7 -p 0.95" # CHANGED HERE (from standard)(bcf223andme.py) filters for glimpse2; Include the X; Bayes Factor > 1.7; Genotype Posterior > 0.95
+
+```
+ie, one use a minimum posterior probability of 0.99; ultralow drops that to 0.95 (increasing call-rate at the cost of increasing the error rate)
+(in context, this section of the config describes the filtering performed on `bcf223andme.py`; in words bcf to 23 and me.)
+
+### Local storage
+Tapir write (some of the) temporary files to local storage devices. In short, if you have an NVMe (or traditional SSD) mounted someplace, update:
 <br>
 `/tmpdirprefix: "/tmp"` <br>
-Ideally, /tmp (or whatever you set this to) is local fast storage (NVMe is best)
+in the config file(s). 
 <br>
-In addition, each tool supports some level of multithreading; the values in place work reasonably well on our system. They may not work well on yours. For example, you likely don't want the number of threads requested; e.g., `threads: 256`, to exceed what your unix system actually has. Consult your `/proc/cpuinfo` file if you are unsure of how many horses you have.
+Better yet, set `/tmp` to the mount location...
+<br>
+
+### Multithreading
+In addition, many of the tools that Tapir uses supports some level of multithreading; 
+the values in place work reasonably well on our system. They may not work well on yours. <br>
+For example, you likely don't want the number of threads requested; e.g., `threads: 256`, to exceed what your unix system actually has. 
+Consult your cpuinfo file (e.g., `tail -n 40 /proc/cpuinfo`) if you are unsure of how many horses you have.
 
 ### Read groups
 Genomic tools use *Read Groups* [External link](https://gatk.broadinstitute.org/hc/en-us/articles/360035890671-Read-groups) to keep track of samples, libraries, and other components of sequencing.
@@ -63,6 +104,7 @@ the config file assumes one of three kind of paths when referring to some file:
    -  tapir assumes that this file is owned by Tapir and the relevant prefix is added (converting it to an absolute path in practice)
    
 ## Notes on scripts
+This pertains to how the `binary` configuration variables are treated by Tapir:
 -  .py
    -  files ending in .py are assumed to be python3; `python3` is prepended to the unix call
 -  .pl

@@ -11,10 +11,15 @@ Version: "v.21"
 # 12/24
 # changed bcf223andme; default bayes factor now 1.7, gp>0.99
 # also changed bcftools call from Aim to Am (missing sites are now missing from the VCF)
+# 3/25
+# Refactor. No tools changed, but the directory structure is made more sane.
 
 
 # Needed for parsing BCLs
+# defaults to $BCLDIR/SampleSheet.csv
 Samplesheet: "SampleSheet.csv"
+# Note that Samplesheet and SampleSheet are permitted variable names. (SampleSheet takes precedence)
+
 
 # Sequencing libraries need to be tracked.
 SamplesheetLibraryColumn: "I7_Index_ID" # a fairly sensible default; if the same sample is prepped twice, 
@@ -22,17 +27,19 @@ SamplesheetLibraryColumn: "I7_Index_ID" # a fairly sensible default; if the same
 
 # we generally assume that you're running snakemake from within the BCL directory
 # you can flag it in, however
-Bcldir: "." 
+Bcldir: "" 
 
 # If not set on the command line, this comes from the "Experiment name" field in the sample sheet
 Experiment: ""
-# automatically writes data to the parent directory of the BCL directory
-Outdir: ".."
-# (of the form Outdir/Experiment)
+
 
 # Needed for parsing FASTQs
 Reads: "Fastqs/*R1*fastq*"
+
 # UD conforms to UDI and UDP
+# This can be modified, but the prefix (UD) cannot be used by any *real* sample
+# ie, it can only be used for unindexed results
+# (which are data that demultiplex for some index not thought to have been sequenced)
 Offtarget_index_prefix: "UD"
 
 # Used to convert bam -> vcf
@@ -176,7 +183,7 @@ bcf223andmeParams:
     binary: "bin/bcf223andme.py"
     snpfile: "resources/snppanel_autos_x.vcf.gz" # only used when making the "SNP" files.
     bcffilt: "--targets-overlap 1 " # only used when making the "SNP" files. Additional arguments to bcftools can be placed here.
-    glimpse2: "-x -b 1.7 -p 0.95" # (bcf223andme.py) filters for glimpse2; Include the X; Bayes Factor > 1.7; Genotype Posterior > 0.95
+    glimpse2: "-x -b 1.7 -p 0.95" # CHANGED HERE (from standard)(bcf223andme.py) filters for glimpse2; Include the X; Bayes Factor > 1.7; Genotype Posterior > 0.95
     bcftools: "-x -q 20" # (bcf223andme.py)  filters for bcftools; Include the X; Genotype quality >= 20
     
     

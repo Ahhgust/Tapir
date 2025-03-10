@@ -385,8 +385,8 @@ print("Samplesheet: ", SAMPLESHEET)
 
 rule bcl:
     input:
-        expand("{outdir}/Run_Fastqs/{rundir}/SampleSheet.csv", outdir=EXPERIMENT, rundir=BCLDIR), # extract fastqs (successfully)...
-        expand("{outdir}/Run_Fastqs/{rundir}/RunAnalysisComplete.txt", outdir=EXPERIMENT, rundir=BCLDIR)
+        expand("{outdir}/Run_Fastqs/{rundir}/SampleSheet.csv", outdir=EXPERIMENT, rundir=RUN), # extract fastqs (successfully)...
+        expand("{outdir}/Run_Fastqs/{rundir}/RunAnalysisComplete.txt", outdir=EXPERIMENT, rundir=RUN)
     # set to either bcl2fastq or bcl-convert, depending on the format of the sample sheet
 
 
