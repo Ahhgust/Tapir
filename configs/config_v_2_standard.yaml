@@ -183,7 +183,7 @@ sexchromosomeParams:
 bcf223andmeParams:
     binary: "bin/bcf223andme.py"
     snpfile: "resources/snppanel_autos_x.vcf.gz" # only used when making the "SNP" files.
-    bcffilt: "--targets-overlap 1 " # only used when making the "SNP" files. Additional arguments to bcftools can be placed here.
+    bcffilt: "" # only used when making the "SNP" files. Additional arguments to bcftools can be placed here.
     glimpse2: "-x -b 1.7 -p 0.99" # (bcf223andme.py) filters for glimpse2; Include the X; Bayes Factor > 1.7; Genotype Posterior > 0.99
     bcftools: "-x -q 20" # (bcf223andme.py)  filters for bcftools; Include the X; Genotype quality >= 20
     

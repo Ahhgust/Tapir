@@ -83,6 +83,12 @@ print("Path: ", ROOT)
 wildcard_constraints:
     suffix=suffix
 
+# equivalent to call_glimpse2 and call_bcftools
+rule call_glimpse2_and_bcftools:
+    input:
+        bamGenerator,
+        expand("Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.{outtype}.tsv.gz", samplename=sampleName, suffix=suffix, caller=['glimpse2', 'bcftools'], outtype=["23andme", "23andme.snps"])
+
 rule call_glimpse2:
     input:
         bamGenerator,
@@ -92,12 +98,6 @@ rule call_bcftools:
     input:
         bamGenerator,
         expand("Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.{outtype}.tsv.gz", samplename=sampleName, suffix=suffix, caller=['bcftools'], outtype=["23andme", "23andme.snps"])
-
-# equivalent to call_glimpse2 and call_bcftools
-rule call_glimpse2_and_bcftools:
-    input:
-        bamGenerator,
-        expand("Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.{outtype}.tsv.gz", samplename=sampleName, suffix=suffix, caller=['glimpse2', 'bcftools'], outtype=["23andme", "23andme.snps"])
 
 # Note; does not create 23andme files...
 rule call_deepvariant:

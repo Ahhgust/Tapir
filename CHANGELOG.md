@@ -8,6 +8,7 @@
 -  Major refactor of directory structures.
    -  all unix routines are unchanged.
    -  refactor also retools fastq input.
+      - bugfix 3/11
 -  Tape backup routines added (see: tape_deck/)
 -  .la.md bam files are set as temporary files
    -  use --notemp (snakemake directive) to keep all temporary files instead

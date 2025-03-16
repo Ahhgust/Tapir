@@ -29,7 +29,7 @@ Note flags affecting threading/multiprocessing/compression are not listed above.
 
 A more complete set of flags are found in the config.yaml files (defaults to: $TAPIR/snakemakes/config_v_2_standard.yaml.)
 
-## Repeated measurements
+## Repeated measurements (merging runs)
 Tapir supports repeated measurements on a sample. <br>
 Tapir is also incredibly ornery about it. <br>
 Repeat after me: If you want merge repeated measurements, <br><br> **They must have the same sample name** <br><br>
@@ -55,6 +55,22 @@ Choosing to do this is dangerous and largely untested; on paper, Glimpse should 
 More importantly, the results will be ( a little bit ) wrong if (and in principle, only if) you sequence the same library multiple times (and fail to specify the right sample identifier).
 Said more concretely, you would miss some PCR duplicates...
 
+### Forcibly merging samples within or between runs
+Tapir is very conservative in how it merges samples. The sample names need to be exactly the same; by construction, they also need to be run on different runs (otherwise we'd have the same name twice, which is a no-no when it comes to how we name files!)
+Note that this Tapir's fault; this is just how genomics works.
+<br>
+Sometimes we need to merge runs across samples. For example, let's say we have two hairs: hair1 and hair2 are their sample names. We'd like to think they came from the same person, but maybe they didn't. If neither one gave us enough information to do genotyping, maybe both of their results together is enough!
+<br>
+Tapir provides *limited* support for doing such things. 
+Right now that support is limited to GLIMPSE (though the BCFtools mpilup command can be modified to accommodate this scenario too).
+Why is it limited, you say? Part of the issue is that the `Read Groups` information is wrong. That means that Tapir will naively merge the bams, but duplicates between but not within your two hair samples cannot be detected. That's okay in this case because they involve separate library preps, so there are no (real) cases of this happening.
+In truth, when we merge BAMs that have different sample ids, we're creating a multi-sample BAM file. So if we do traditional genotyping on that, you'd get a VCF file for two individuals out (with BCFtools).
+As it stands, GLIMPSE assumes that we're working with a single-sample file, which is convenient because that's what we want to treat the data as.
+A more correct solution is to rewrite the read groups to have the "correct" sample identifier (hair1hair2?), but the result is the same either way.
+
+TODO: Double check!
+
+
 ## Custom Configurations
 Tapir supports limited flexibility. Below we describe what things can (and probably should) be configured.
 ### Configuration files.
@@ -71,7 +87,7 @@ Note that the two configs only differ at a single line; the difference (`diff`) 
 
 ```
 ie, one use a minimum posterior probability of 0.99; ultralow drops that to 0.95 (increasing both the call-rate and the error rate, which you might have to do if you're below the minimum call rate)
-(in context, this section of the config describes the filtering performed on `bcf223andme.py`; in words bcf to 23 and me.)
+(in context, this section of the config describes the filtering performed on `bcf223andme.py`; in words "bcf to 23 and me".)
 
 ### Local storage
 Tapir writes (many) temporary files to local storage devices. In short, if you have an NVMe (or traditional SSD) mounted someplace, update:

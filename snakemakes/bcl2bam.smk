@@ -12,6 +12,7 @@ configfile: os.path.join(ROOT, "configs", "config_v_2_standard.yaml")
 configpath=os.path.join(ROOT, "configs", "config_v_2_standard.yaml")
 i=0
 
+
 if '--configfiles' in sys.argv:
     print("Only 1 config file is supported. Use --configfile instead", file=sys.stderr)
     exit(1) #    
@@ -288,7 +289,6 @@ def aggregate_fastqs(wildcards):
 
     # .output refers to: "Fastqs/Stats/Stats.json" ; we just want the Fastqs directory
     fqdir = os.path.dirname( os.path.dirname(str(checkpoints.extract_fastqs.get(**wildcards).output)) )
-    
     validFiles = parseFastqs(fqdir) # update the SAMPLES and OFFTARGETs dictionaries.
     
     return validFiles
@@ -328,17 +328,16 @@ def gather_all_reports(wildcards):
     """
     global RUN
     global EXPERIMENT
-
+    print("WILDCARDS", wildcards)
+    
     if "outdir" not in wildcards:
         wildcards.outdir=EXPERIMENT 
     if "rundir" not in wildcards:
         wildcards.rundir=RUN
 
     fqdir = os.path.join(wildcards.outdir, "Run_Fastqs", wildcards.rundir, "Fastqs") 
-    
     parseFastqs(fqdir)
-    
-    
+
     files = []
     
     for samp in SAMPLES.keys():
@@ -443,8 +442,6 @@ rule bcl:
         expand("{outdir}/Run_Fastqs/{rundir}/SampleSheet.csv", outdir=EXPERIMENT, rundir=RUN), # extract fastqs (successfully)...
         expand("{outdir}/Run_Fastqs/{rundir}/RunAnalysisComplete.txt", outdir=EXPERIMENT, rundir=RUN)
     # set to either bcl2fastq or bcl-convert, depending on the format of the sample sheet
-
-
 if bclConverter=="bcl2fastq":
     checkpoint extract_fastqs:
         input:
@@ -525,13 +522,6 @@ rule gather_fastqs:
         cp -L {params.samplesheet} {output.samplesheet} && echo "bcl2bam version " {params.version} > {output.version}
         """
 
-
-# used for fastq input (as opposed to BCL)
-# NOT recommended; but supported
-rule fastq2bam:
-    # todo? aggregate_fastqs too? if so, need to tweak wildcards
-    input:
-        gather_all_reports
 
 def getLibrary(wildcards):
     """
@@ -787,9 +777,9 @@ rule complete:
         aggregate_fastqs,
         gather_all_reports
     output:
-        marker="{outdir}/{rundir}/RunAnalysisComplete.txt",
-        args="{outdir}/{rundir}/args.txt",
-        cfile="{outdir}/{rundir}/config.csv"
+        marker="{outdir}/Run_Fastqs/{rundir}/RunAnalysisComplete.txt",
+        args="{outdir}/Run_Fastqs/{rundir}/args.txt",
+        cfile="{outdir}/Run_Fastqs/{rundir}/config.csv"
     params:
         configFile=configpath,
         versionNumber=VERSION,

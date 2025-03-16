@@ -33,6 +33,28 @@ where `(...)` is the rest of your command.
 ```keep-going``` will tolerate program failures. e.g., BCFtools call can (on occassion) just crash. This is rare, and usually occurs when you have very (very) little data.
 Using ```keep-going``` will let the rest of the workflow complete, whereas the default is for snakemake to stop working when any component of it crashes.
 
+### Unlocking
+You run Tapir and it says:
+```
+...
+Building DAG of jobs...
+Error: Directory cannot be locked.
+...
+```
+What's happening?<br>
+Snakemake locks a workflow when it is running (okay, that's a simplification, but let's just roll with it); unless the run died a horrible death, Snakemake should also unlock the directory when it is done.
+You can forcibly unlock a directory by:
+```
+snakemake --unlock
+```
+But know that if the directory is locked **because snakemake is currently running in that directory**, you just made a big goof.
+
+
+
+### Other snakemake problems
+Snakemake has its own FAQ. Here's a link to one of them: [Link](https://snakemake.readthedocs.io/en/stable/project_info/faq.html)<br>
+Maybe you'll see your issue there?
+
 ## Logs
 Whenever a different tool is run, Tapir keeps the output of that tool in a log.
 <br>
