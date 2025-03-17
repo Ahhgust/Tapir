@@ -2,10 +2,10 @@
 Tapir makes a ridiculous number of files.
 This is my attempt to document all non-obvious and/or non-trivial files.
 
--	[**Standard genomic file formats](#Standard-Formats) Links to various standard genomic file formats.
--	[**Suffixes](#Suffixes) File names tell you how the file was processed. Learn more!
--	[**Run_Data](#Run-Data) Custom files from Tapir (Step 1)
--	[**Sample_Data](#Sample-Data) Custom files from Tapir (Step 2)
+-	[Standard genomic file formats](#Standard-Formats) Links to various standard genomic file formats.
+-	[Suffixes](#Suffixes) File names tell you how the file was processed. Learn more!
+-	[Run_Data](#Run-Data) Custom files from Tapir (Step 1)
+-	[Sample_Data](#Sample-Data) Custom files from Tapir (Step 2)
 
 Forgot what a term means, consult the [Glossary](Glossary.md)
 
