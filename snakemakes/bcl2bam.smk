@@ -772,7 +772,7 @@ rule plot_gatk_bqsr:
 
 # for reproducibility
 # record the config file used, the exact command line arguments, and the version number (this script)
-rule complete:
+rule repro:
     input:
         aggregate_fastqs,
         gather_all_reports

@@ -62,13 +62,28 @@ Note that this Tapir's fault; this is just how genomics works.
 Sometimes we need to merge runs across samples. For example, let's say we have two hairs: hair1 and hair2 are their sample names. We'd like to think they came from the same person, but maybe they didn't. If neither one gave us enough information to do genotyping, maybe both of their results together is enough!
 <br>
 Tapir provides *limited* support for doing such things. 
-Right now that support is limited to GLIMPSE (though the BCFtools mpilup command can be modified to accommodate this scenario too).
+Right now that support is limited to GLIMPSE (though the BCFtools mpileup command can be modified to accommodate this scenario too).
 Why is it limited, you say? Part of the issue is that the `Read Groups` information is wrong. That means that Tapir will naively merge the bams, but duplicates between but not within your two hair samples cannot be detected. That's okay in this case because they involve separate library preps, so there are no (real) cases of this happening.
 In truth, when we merge BAMs that have different sample ids, we're creating a multi-sample BAM file. So if we do traditional genotyping on that, you'd get a VCF file for two individuals out (with BCFtools).
 As it stands, GLIMPSE assumes that we're working with a single-sample file, which is convenient because that's what we want to treat the data as.
 A more correct solution is to rewrite the read groups to have the "correct" sample identifier (hair1hair2?), but the result is the same either way.
+<br>
+We provide a python script to help with this process. 
+It also supports using BAMs produced by other pipelines, but you do so at your own risk (ie, it's not Tapir's fault if you get a bad result; that's on you).
+Let's say we have two BAM files (`file1.bam` and `file2.bam`) and we want to run step2 of Tapir.
+Simply:
+```
+python3  $TAPIR/bin/makeQuasiReplicates.py -s Merged -i file1.bam file2.bam
+```
+The above will make Tapir-compliant BAM files (in name only, as symbolic links, but in a directory structure consistent with what Tapir expects). 
+By default, it makes a sample name "Combined"; in the above we went with the catchy name "Merged"
+Afterwards, simply run Step 2. E.g., 
+```
+cd Merged
+snakemake -c 128 -s $TAPIR/snakemakes/bams2genotypes.smk  --until call_glimpse2"
+```
 
-TODO: Double check!
+this will run Glimpse on the merge/remark-duplicate result. Note that if you are not careful with your read-groups, the BCFtools genotyping will be wrong, as it supports multisample genotyping (and Tapir is built for single-sample genotyping)
 
 
 ## Custom Configurations

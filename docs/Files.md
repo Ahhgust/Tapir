@@ -9,6 +9,13 @@ This is my attempt to document all non-obvious and/or non-trivial files.
 
 Forgot what a term means, consult the [Glossary](Glossary.md)
 
+## What is (and is not) kept
+Tapir creates many files; not all are retained. Some are explicitly not retained; 
+eg, when we genotype we break the genome into pieces, genotype (in parallel), and then stitch them back together again.
+These pieces are not retained (and are written to /tmp by default).
+We also create intermediate files (eg, a bam file exists before and after duplicates are marked).
+We use the `temp` directive in snakemake to do so. These files can be (forcibly) retained. Just add `--notemp` to you snakemake command line.
+
 ## Standard Formats
 Tapir uses many standard file formats. These include:
 
@@ -30,7 +37,8 @@ Note that SAM/VCF are text (uncompressed), while BAM, BCF and .vcf.gz are compre
 
 
 ### Suffixes 
-Different genomic tools read in information and produce information. In general, the steps that lead to some file can be read from left to right, meaning that tasks are added to the end of the file name.
+Genomic tools read in information and then produce information. We also track these tools using the file name. Ideally, a good file name should tell you (at the level of 10,000 feet) what was done to that file.
+In general, the steps that lead to some file can be read from left to right, meaning that tasks are added to the end of the file name.
 <br>
 The extension:
 ```
@@ -48,7 +56,77 @@ which tells you both what was done, and the order (first `la`, then `md`, then `
 
 ## Run Data 
 (Step 1 of Tapir) <br>
-Files in the `Run_Data` directory are run specific.
+Files in the `Run_Data` directory are run- (as opposed to sample-) specific.
+
+### Files for reproducibility
+-  `Run_Fastqs/*your_run*/SampleSheet.csv`
+   -	This is the sample sheet you used when you ran `bcl2bams.smk`. It is written just after the FASTQs are extracted.
+-  `Run_Fastqs/*your_run*/version.txt`
+   -	The version of `bcl2bams.smk` that was used.
+-  `Run_Fastqs/*your_run*/config.yaml`
+   -	This is the config file used.
+
+
+### Files related to FASTQ extraction
+-  `Run_Fastqs/*your_run*/Fastqs/Stats/AdapterTrimming.json`
+   -	Created by `bcl2fastq`. This gives trimming
+-  `Run_Fastqs/*your_run*/Fastqs/bcl2fastq.outerr
+   -	Also createrd by bcl2fastq. This is the standard output/standard error of the run
+   -	Note it is not in a 'Logs' directory.
+
+### FASTQs
+Fastqs are stored here:
+`Run_Fastqs/*your_run*/Fastqs/*fastq.gz`
+Tapir (by default) retains all FASTQs. It also extracts your indexes (necessary input for `deML`). 
+The "index" fastqs have `_I1_` or `_I2_` in their file name, while the read data have `_R1_` or `_R2_` 
+The *size* of the fastqs can be a rough indicator of performance. <br>
+In particular, FASTQs from the unclaimed indexes (typically UDI/UDP as a prefix) can be diagnostic--
+ if these files are very large, you likely have an error in your sample sheet (or worse; contamination).
+
+## Sample Data
+From step 1 of Tapir. <br>
+### Sample_Data/Undetermined/
+This directory has all of the data related to the "Undetermined" fastqs. <br>
+i.e., data that failed to demultiplex. Tapir provides limited reporting on these files.
+Relevant data are in: 
+```
+Sample_Data/Undetermined/*your_run*/Reports/
+```
+Which includes samstats/flagstat files (read depth information may be helpful), as well as the fastqc report.
+Tapir does not run BQSR on these files (BQSR is slow and serves little point here).
+If you have poor run performance, it may pay to check if demultiplexing performed poorly. 
+The configuration files do let you modify the stringency when demultiplexing (bcl2fastq; you can add `--barcode-mismatch 3` to the `params` directive).
+Do so at your own risk, however. (eg, mismatch of 1 is the default; you likely won't be able to demultiplex 96 samples with anything larger than 1).
+You can also check out the FASTQ files (the indexes themselves; eg, from the *Fastqs/* directory:
+```
+ls -lSr UD*_I[12]_*gz | tail
+```
+will show you the 10 largest barcode files; while:
+```
+zcat *biggestIndexFile* | head -n 40
+``` 
+will show you the first 10 FASTQ records in that file (each fastq record is 4 lines long; hence 40). Demultiplexing failure can happen, for example, if the sample indexes have a lot of Ns in them.
+`deML` may be able to save some of the data, but note that `deML` has not been integrated into Tapir. (ie, this fix requires a fair amount of expertise)
+
+<br>
+You can also use tapir to see what indexes are appearing in the Undetermined files  a la:
+```
+zcat Undetermined_S0_L001_R1_001.fastq.gz | head -n 400000 | python3  $TAPIR/bin/getBarcodes.py|tail -n 30
+```
+
+Which reports the index (pair, observed), a raw count and a percentage of reads associated with that barcode pair.
+<br>
+Remember, if you're working with a NovaSeq, an index that is all "G" is really just missing data (in this two-dye system, G is no signal).
+
+
+### Sample_Data/Offtargets/
+We recommend extracting all indexes, regardless of their intended use. We call these data "offtargets". They are treated as quasi-samples. It is important to evaluate the throughput *in every run*.
+You can get the mean read depth (from the `Sample_Data/Offtargets/*your_run*/Reports/` directory) using the below:
+```
+$TAPIR/bin/fcat.pl -h *cov | cut -f2-3
+```
+which concatenates (combines) all the coverage estimates. An offtarget file that has a lot of data in it probably indicates a mislabeled sample in your sample sheet.
+It can also indicate carryover/contamination.
 
 ### Flagstat
 See `Sample_Data`
@@ -69,7 +147,7 @@ Files in the `Sample_Data` directory are sample specific.
 	-  Is a the file has been merged and duplicates marked again ("remarked") (NOT a symlink)
 
 ### Xploidy
-In the VCFs directory, you will find an "xploidy" file. Tapir uses it to estimate the ploidy of the X chromosome, and then use that information to genotype the X (haploid or diploid).
+In the VCFs directory, you will find an "xploidy" file. Tapir uses it to estimate the ploidy of the X chromosome, it then uses that information to genotype the X (haploid or diploid).
 <br>
 Tapir does so by considering two hypotheses: the individual is AA:XX (eg, female), or the individual is AA:X (eg, male). The number of reads mapping to those chromosomes lets us assess these hypotheses.
 The result from the hypothesis testing is written to:
@@ -134,7 +212,7 @@ In practice, the value provided shouldn't be taken at face value, but it does te
 
 ### Demix
 
-Refers to Demixtify (v1). In brief, demixtify assesses two hypotheses: the sample is a DNA mixture (2 unknown persons) versus a single source sample (1 unknown).
+Refers to Demixtify (v1). In brief, demixtify assesses two hypotheses: the sample is a DNA mixture (2 unknown persons) versus single source sample (1 unknown).
 It estimates the two corresponding likelihoods using the biallelic SNVs found in: `$TAPIR/resources/GSA-24v3-0_A2.hg38.gnomadannos.autos.sites2include.justafs.vcf.gz`) 
 Demixtify is available on (my) github: [Link](https://github.com/Ahhgust/Demixtify)
 The file formats are described [Here](https://github.com/Ahhgust/Demixtify/blob/main/MFfile.md)
@@ -143,9 +221,10 @@ Note, Tapir uses V1 of Demixtify. It is only used for mixture identification, no
 <br>
 In practice, we find that testing the two stated hypotheses is sufficient; eg, 3 person mixtures are still much more likely under the two (versus) one contributor hypothesis.
 <br>
-In addition, Demixtify is very efficient; even a small fraction of another person's reads(~0.5%, perhaps less) provides enough evidence for a DNA mixture.
+In addition, Demixtify is very efficient; even a small fraction of another person's reads (~0.5%, perhaps less) can provide enough evidence that a sample is a DNA mixture. (CE is far less sensitive)
 We use the following interpretation scheme:
 - 	The LLR < 6.635/2
+	-	This is an application of a chi-square approximation to the likelihood ratio (LR) *test*. It is a significance test on the LR.
 	-	We call the sample single source
 		-	6.635 uses an alpha of 0.01
 		-	Use a chi-square table (1 degree of freedom) to adjust
@@ -154,11 +233,22 @@ We use the following interpretation scheme:
 		-	That's why we use a likelhood ratio *test*.
 -	The mixture proportion (mp) <= 5% (and the mixture hypothesis has significant support)
 	- 	We call the sample *effectively* single source
-		-	5% is an aribtrary cutoff, where the major contributor tends to be correctly genotyped even if it's truly a highly imbalanced mixture.
+		-	5% is an arbitrary cutoff, where the major contributor tends to be correctly genotyped even if it's truly a highly imbalanced mixture.
 	-	If the mp is estimated to be 0.5% (0.005)
-		- 	Don't worry about it. The true *mp* can be truly trivial `<<0.005`
+		- 	Don't worry about it. The true *mp* can be truly trivial `<<0.005` and what is observed may be explained by a few rogue reads.
+		-   All that can be really said is that 0.5% is more likely than 0%. The true MF may be 0.9% or 0.000001%.
 	-	Otherwise
-		- 	Maybe consider diagnosing the situation. You have alleles of an unexpected kind in your data. Bacterial contamination can (in principle) cause this, for example.
+		- 	Consider diagnosing the situation. You have alleles of an unexpected kind in your data. Bacterial contamination can (in principle) cause this, for example.
+		-	In *some* hair samples we have noticed that the MP can be small (~1-2%) and have significant support.
+		-	Consider checking the distribution of read depths; are there outliers?
+			- 	For low coverage samples (<1x), you can check the "Poisson-ness" of the sample:
+			-	`1.0 - dpois(0, 0.060)`
+			-	(where the mean read depth is 0.060).
+			-	In words, `dpois(0, 0.060)` gives the probability of observing 0 reads given a 0.060x coverage genome (under a Poisson model; not a bad model, especially in low coverage scenarios).
+			-	1.0- then flips it; it's the probability of observing 1+ reads.
+			-	This is an estimate of the Breadth at 1X. If the values are similar, then you're happy.
+			-	If not, you likely have some form of drop-in
+				- 	In essence, some places in the genome have too many reads.
 -	The mixture proportion (mp) > 5% (and the mixture hypothesis has significant support)
 	- 	We call this a mixture.
 		- 	Perhaps you merged some biological replicates together?

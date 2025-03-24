@@ -1,6 +1,7 @@
 import glob, os, sys, re, time, gzip
 import GenomixHelper
 
+VERSION=0.30
 # Changelog:
 # added support for only emitting SNPs (as opposed to SNVs).
 
@@ -8,9 +9,28 @@ import GenomixHelper
 # bin/ and resources/ are in sibling directories; refer to them relative to ROOT
 ROOT=os.path.abspath(  os.path.join(workflow.current_basedir, ".."))
 
+# defaults
 configfile: os.path.join(ROOT, "configs", "config_v_2_standard.yaml")
+configpath=os.path.join(ROOT, "configs", "config_v_2_standard.yaml")
+i=0
 
 
+if '--configfiles' in sys.argv:
+    print("Only 1 config file is supported. Use --configfile instead", file=sys.stderr)
+    exit(1) #    
+
+# They python variable `configpath` is equivalent to the snakemake variable `configfile`
+# (though this script cannot access `configfile` directly)
+if '--configfile' in sys.argv:
+    i = sys.argv.index('--configfile')
+
+if i:
+    if i < len(sys.argv)-1:
+        configpath=sys.argv[i+1]
+    else: # I do not think it's possible to enter this Else statement, but just in case.
+        print("--configfile argument is misspecified (?)", file=sys.stderr)
+        exit(1) # 
+    
 GX= GenomixHelper.GenomixHelper(workflow.current_basedir, config)
 
 ### Let's grab some resources/binaries that we'll need a lot
@@ -45,7 +65,8 @@ bams=glob.glob(f"*/Bams/*{suffix}.bam")
 if len(bams)==0:
     print("No bam files detected?!", "Are you sure you're in right directory?", sep="\n", file=sys.stderr)
     exit(1)
-    
+
+
 
 def bamGenerator(wildcards):
     """
@@ -493,11 +514,14 @@ rule hg19_to_23andme:
         {params.binary} {params.filt} -o | gzip -9 > {output} )  2> {log}
         """
 
+# note, final reproducibility files are written here too.
 rule hg19_to_23andme_snps:
     input:
         "VCFs/{caller}/{samplename}.{suffix}.{caller}.hg19.vcf.gz"    
     output:
-        "Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.23andme.snps.tsv.gz"
+        snps="Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.23andme.snps.tsv.gz",
+        args="Final_Reports/args.{samplename}.{suffix}.{caller}.txt",
+        cfile="Final_Reports/config.{samplename}.{suffix}.{caller}.csv"       
     log:
         "Logs/{samplename}.{suffix}.{caller}.23andme.snps.log"
     params:
@@ -505,7 +529,10 @@ rule hg19_to_23andme_snps:
         binary=GX.getBinary("bcf223andme"),
         bcftoolsargs=GX.getParam("bcf223andmeParams", "bcffilt"),
         snpfile=GX.getParam("bcf223andmeParams","snpfile"),
-        filt=getVcfFilters
+        filt=getVcfFilters,
+        configFile=configpath,
+        versionNumber=VERSION,
+        arguments=" ".join(sys.argv)
     shell: # in words; remove no-calls (-U), and places where the original and lifted chromosome do not match are excluded (-e ...)
            # in addition, only emit sites listed in the VCF file (snpfile)
            # merge (normalize) to reinstate multiallelic sites
@@ -513,7 +540,10 @@ rule hg19_to_23andme_snps:
            # and create a "23andme" file (using bcf223andme.py)
         """
         ({params.bcftools} view -Ou -U {params.bcftoolsargs} -T {params.snpfile} -e "INFO/OriginalContig!=CHROM" {input} | {params.bcftools} norm -Ov -m+  | \
-        {params.binary} {params.filt} -o | gzip -9 > {output} )  2> {log}
+        {params.binary} {params.filt} -o | gzip -9 > {output.snps} )  2> {log}
+        echo {params.arguments} > {output.args}
+        echo BCL2BAMs Version: {params.versionNumber} >> {output.args}
+        cp -L {params.configFile} {output.cfile}
         """
 
 # Taken from bcl2bam; IO is modified.
@@ -580,6 +610,7 @@ rule make_bam_flagstats:
     params:
         binary=GX.getParam("samtools", "binary"),
     log:
-        "Logs/{samplename}.{suffix}.merged.md..flagstat.log"
+        "Logs/{samplename}.{suffix}.merged.md.flagstat.log"
     shell:
         "{params.binary} flagstat -@ {threads}  {input} > {output} 2> {log}"
+        

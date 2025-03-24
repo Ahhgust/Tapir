@@ -4,7 +4,9 @@
 ### Beta
 3/2025
 -  Support for multiple config files added.
-   -  at most 1 config can be used at any 1 time.
+	-  at most 1 config can be used at any 1 time.
+	-  config files and command line arguments are copied (bcl2bam and bams2genotypes)
+	-  for the latter, config files copied per genotyper.
 -  Major refactor of directory structures.
    -  all unix routines are unchanged.
    -  refactor also retools fastq input.

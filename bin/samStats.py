@@ -118,11 +118,11 @@ def main(args):
 
             readnames.add(c.query_name) #ignore overlapping reads
 
-            nreadsWithDups +=1
-            
             if not c.is_proper_pair or c.query_name is None:
                 continue
-
+            
+            nreadsWithDups +=1
+            
 
             if not c.is_duplicate:
                 nreads += 1
