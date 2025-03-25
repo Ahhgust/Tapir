@@ -8,9 +8,10 @@ A dry-run (`-n` when you run snakemake) will (amongst other things) parse the sa
 Common mistakes:
 - bad sample names
   -  Illumina forces us to use numbers, letters and - in sample names. **that's it**
-     - so **no** periods (0.5ng)
-	 - underscores (foo_bar) 
-	 - or spaces (sample 5)
+     - so **no** periods (`0.5ng`)
+	 - underscores (`foo_bar`) 
+	 - or spaces (`sample 5`)
+	   - honestly, just don't use spaces ever. It's a unix no-no.
   -  Sample names also cannot start with UD
      - This prefix is reserved for indexes.
 - bad file formats
@@ -61,13 +62,13 @@ Whenever a different tool is run, Tapir keeps the output of that tool in a log.
 Some tools are really chatty, however, so don't confuse a big log with a bad result. <br>
 If you think something broke (did you need to say ```--keep-going```?), you should investigate why.
 <br>
-In general, it pays to look at the beginning of the log (head -n 20 foo.log) and the end of the log (tail -n 20 foo.log).
+In general, it pays to look at the beginning of the log (`head -n 20 foo.log`) and the end of the log (`tail -n 20 foo.log`).
 Errors (most often) are reported in these places.
 ### Run-level logs
 bcl-convert and bcl2fastq are run-level tools. A file called `Fastqs/bcl2fastq.outerr` (or bcl-convert.outerr) has all of the chatter
 ### Per sample (per run) logs
 Each sample should have a bam file
-and `VCFs`, `Uploads` and a `Logs` directory. They should also have 1 or more Run directories (ie, directories with BAMs in them)
+and `VCFs`, `Uploads`, `Final_Reports` and a `Logs` directory. They should also have 1 or more Run directories (ie, directories with BAMs in them)
 <br>
 The log names should be self-explanatory. (this is not meant in a condescending way; we want the user to be able to look at a file, and have a solid idea what the file *is*, based on its name alone)
 <br>E.g.:
@@ -75,7 +76,7 @@ The log names should be self-explanatory. (this is not meant in a condescending 
 S002-4cm-1-05x.la.md.bqsr.merged.log
 ```
 has the:
-- sample name (S002-4cm-1-05x)
+- sample name (`S002-4cm-1-05x`)
   - (it is up to the user to make a good sample name; i.e., one that describes what the sample *is*)
 - and the bam file was:
   -  left aligned (la)
@@ -86,6 +87,6 @@ has the:
 ## Poor demultiplexing performance
 bcl-convert and bcl2fastq use heuristics to demultiplex your samples; by default, the sequences must match (tolerating up to 1 mismatch). <br>
 We also provide a binary for [deML](https://github.com/grenaud/deML), which demultiplexes by maximum likelihood. 
-If your run had very poor results for the sample indexes (_I1_ and the _I2_ fastq files), then your demultiplexing will be poor.
+If your run had very poor results for the sample indexes (`_I1_` and the `_I2_` fastq files), then your demultiplexing will be poor.
 `deML` can rescue some of these reads (and in fact, it's the reason we extract the indexes in fastq format). Adding deML support is something we hope to support in the future.
-However, you (the user) can manually run it....
+However, you (the user) can manually run it...

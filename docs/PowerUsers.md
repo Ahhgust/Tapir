@@ -157,6 +157,10 @@ This pertains to how the `binary` configuration variables are treated by Tapir:
 ## Notes on additional utilities
 Tapir has quite a few tools present that aren't actively used; they may be incorporated in the future, so maybe this serves as a "sneak peek!"
 
+## DeepVariant
+Tapir also comes prepackaged with DeepVariant (`src/DeepVariant/deepvariant_latest.sif`). You can invoke it by:
+`snakemake -c 128 -s src/bams2genotypes.smk --until call_deepvariant`
+Note Tapir doesn't officially support DeepVariant; if the above doesn't work, so be it. You will need singularity to be installed however.
 
 
 

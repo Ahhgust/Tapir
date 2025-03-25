@@ -137,6 +137,22 @@ See `Sample_Data`
 ### Samstats.cov
 See `Sample_Data`
 
+### BQSR report
+Tapir runs GATK's BQSR [External Link](https://gatk.broadinstitute.org/hc/en-us/articles/360035890531-Base-Quality-Score-Recalibration-BQSR)
+and generates a recalibration report (item 5. in the above link). The report is named:
+```
+Sample_Data/*your_sample*/*your_run*/Reports/*bqsr_summary.pdf
+```
+And it provides a high-level description on the extent and type of quality score recalibration that occurred.
+
+### Fastqc reports
+Tapir provides two fastqc reports; one for all of read1, and another for all of read2 (r1_fastqc.zip, r2_fastqc.zip). 
+These are sample+run specific (so the same directory as the bqsr reports). <br>
+Here's an [External link](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) to what these reports look like. <br>
+Of note, we run fastqc on the aligned reads from the BAMs, which is a bit atypical (but generating 4x2=8 reports per sample; r1 and r2, 4 lanes) is crazy stupid and redundant. This is less information at least :)
+
+
+
 ## Sample Data
 (Step 2 of Tapir) <br>
 Files in the `Sample_Data` directory are sample specific.
