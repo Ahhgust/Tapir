@@ -13,10 +13,6 @@ configpath=os.path.join(ROOT, "configs", "config_v_2_standard.yaml")
 i=0
 
 
-if '--configfiles' in sys.argv:
-    print("Only 1 config file is supported. Use --configfile instead", file=sys.stderr)
-    exit(1) #    
-
 # They python variable `configpath` is equivalent to the snakemake variable `configfile`
 # (though this script cannot access `configfile` directly)
 if '--configfile' in sys.argv:
