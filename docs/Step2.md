@@ -55,3 +55,52 @@ Within a biological sample (with *m* libraries)
       - By default: 
 	     - BCFtools: Genotype quality >20
 		 - Glimpse: Genotype posterior probability >0.99 AND a Bayes Factor > 1.7
+		 
+		 
+### Examples (FASTQ)
+
+We run step2 of Tapir on those files that pass QC from step1. <br>
+If we consider our example from [Step1]("./Step1.md"), a `LowPass` directory was made (that was our "Experiment name"; adjust as necessary).
+```
+ls LowPass/Sample_Data/GMWOF5428715/fastq_example/
+```
+`GMWOF5428715` is the name of the sample (from the SampleSheet); `fastq_example` is the name of the "run" (quotes, because it's just the name of the directory that housed the original fastqs)
+Note that Tapir provides Bams and Reports for each sample for each run.
+
+This provides:
+```
+Reports/
+Logs/
+Bams/
+```
+Where `Reports/` provides information on coverage (`.cov`), read mapping (`.flagstat`), the extent of BQSR recalibration (`.bqsr_summary.pdf`), the mixture status (`.demix.summary`), as well as two FASTQC reports (`.r_1.fastqc.html` and `.r_2.fastqc.html` for reads 1 and 2, respectively; merged across lanes).
+<br>
+`Bams/` provides what we care about; the final BAM file (`.la.md.bqsr.bam`)
+
+
+After QC checking has been performed, run the next step2; first change into the right directory (the *Sample* directory. GMWOF5428715 in the above.
+
+
+```
+cd LowPass/Sample_Data/GMWOF5428715
+```
+And run snakemake:
+
+on a commodity computer as:
+
+```
+snakemake -n -c 3 -s $TAPIR/snakemakes/bams2genotypes.smk --configfile $TAPIR/configs/config_v_2_low_mem.yaml 
+```
+(and remove the -n if the above looks right).
+By default, Tapir runs GLIMPSE and BCFtools. BCFtools has limited applicability in low-throughput settings. You can save yourself some time by only running GLIMPSE:
+
+
+```
+snakemake -n -c 3 -s $TAPIR/snakemakes/bams2genotypes.smk --configfile $TAPIR/configs/config_v_2_low_mem.yaml --until call_glimpse2
+```
+
+(omitting the -n if you are happy with the result)
+
+Only using 3 cores is very limiting; GLIMPSE is memory intensive, however. 3 works on my laptop, but consider ramping this value up if you have more memory.
+
+

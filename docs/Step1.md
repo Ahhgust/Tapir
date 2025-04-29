@@ -37,16 +37,23 @@ In words:
    -  Unused Indexes' BAM files do not undergo bqsr; they are made, summarized, then deleted.
    -  Use the `Reports/*flagstat` and `Reports/*cov` files to identify problems.
    
-## How to
-Tapir is a snakemake workflow; snakemake lets us (easily) stitch all of these tools together, as well, snakemake keeps track of program "state". eg, if the power is turned off, snakemake can deduce what it was doing, and restart computation at the appropriate location.
-<br>
+
+## Conda/Mamba
+If you're using Mamba or Conda, make sure you shell looks like:
+```
+(tapir) [somestuffhere]$ 
+```
+If not, run `mamba activate tapir` (or `conda activate tapir` as appropriate).
+
+## How to (BCL)
+
 Suppose a sequencing run just finished; let's call it: `250103_A01324_0120_BHWGY2DMXY` and it lives in a directory called: <br>
 `/eva/staging/Novaseq/Novaseq/Output/`
 <br>
-First, attempt a dry-run (-n)
+First, attempt a dry-run (`-n`)
 ```
-snakemake -n  -s $TAPIR/snakemakes/bcl2bam.smk  -c256 --config Bcldir=/eva/staging/Novaseq/Novaseq/Output/250103_A01324_0120_BHWGY2DMXY Experiment=/eva/datums/cooked/NovaSeq001/2025/WGSValidation/Sensitivity
-echo $?
+snakemake -n  -s $TAPIR/snakemakes/bcl2bam.smk  -c256 --config Bcldir=/eva/staging/Novaseq/Novaseq/Output/250103_A01324_0120_BHWGY2DMXY
+echo $? # the last line should be '0'; anything else tells you that snakemake exited w/ an error
 ```
 
 Which tells snakemake to evaluate all of the information, and evaluate what needs to be run. Dry-runs are "chatty", so it can be a bit hard to tell if errors or present (or not, depending on the error). The error code is also printed `echo $?`; the last line *should* say 0. If not, you may have mis-specified something.
@@ -58,7 +65,7 @@ Parameters (ie, things that start with a "-") of note:
       - Adjust as necessary
    -  Bcldir=
       - Set this to the BCL directory you want to extract
-         -  In the case of the NovaSeq, a "CopyComplete.txt" file is expected
+         -  A "CopyComplete.txt" file is expected
    -  Experiment=
          -  This *can* be set in the SampleSheet (Experiment= ...)
          -  Set this to the (parent) directory.
@@ -74,10 +81,18 @@ The dry-run will also parse the provided sample sheet; there are a lot of ways t
 ![here](../examples/sample_sheets/README.md) for a reminder of how what the sample sheet *should* look like.
 <br>
 
-If your dry-run is successful, let's run Tapir for real. I recommend:
+A more complete command might look like:
 
 ```
-nohup snakemake -s $TAPIR/snakemakes/bcl2bam.smk  -c256 --config Bcldir=/eva/staging/Novaseq/Novaseq/Output/250103_A01324_0120_BHWGY2DMXY Experiment=/eva/datums/cooked/NovaSeq001/2025/WGSValidation/Sensitivity &> log.outerr &
+snakemake -n  -s $TAPIR/snakemakes/bcl2bam.smk  -c256 --config Bcldir=/eva/staging/Novaseq/Novaseq/Output/250103_A01324_0120_BHWGY2DMXY Samplesheet=./MySampleSheet.csv Experiment=WriteDataHere --configfile  $TAPIR/configs/config_v_2_low_mem.yaml
+echo $?
+```
+
+Which would look for the sample sheet (called `MySampleSheet.csv` in the current directory), and write data to a directory (also in the current directory) called `WriteDataHere`, and rather than using the default configuration file, please use the file designed for low memory.
+If everything looks good, try the command for real: (note, no `-n`).
+
+```
+nohup snakemake -s $TAPIR/snakemakes/bcl2bam.smk  -c256 --config Bcldir=/eva/staging/Novaseq/Novaseq/Output/250103_A01324_0120_BHWGY2DMXY &> log &
 ```
 
 Which runs the command in the background (trailing &) and lets you exit/logout of the shell without aborting the call (nohup; no hardware interrupt)
@@ -85,6 +100,45 @@ Which runs the command in the background (trailing &) and lets you exit/logout o
 <br>
 Note that when Step 1 completes, that would be a good time to evaluate both sample-level QC metrics; see ![here](./QC.md) <br>
 As well, run-level metrics are of key importance.
+
+## How to (FASTQ)
+
+Input requirements: <br>
+-	FASTQS (paired end sequencing only; Illumina only)
+-	A sample sheet (so the right read group information is added)
+-	A file named `CopyComplete.txt` in the same directory as the FASTQs.
+
+Step 1 of Tapir also supports Fastq. Note the FASTQs need to have been generated from `bcl2fastq` or `bcl-convert`. IE, it is not *any* FASTQ that it is supported, but ones that have Illumina sequence identifiers (see [External link](https://en.wikipedia.org/wiki/FASTQ_format) )
+<br>
+It does so by acting as if bcl-convert (or bcl2fastq) was already run on.
+<br>
+For example, let's make a directory called `Lowpass` that has the goodies in it.
+```
+mkdir Lowpass
+cd Lowpass
+cp $TAPIR/examples/fastq_example/*gz .
+touch CopyComplete.txt
+cd ..
+```
+Next, we try a dry-run (`snakemake -n ...`)
+```
+snakemake -n -s $TAPIR/snakemakes/bcl2bam.smk -c256 --config Fastqdir=Lowpass Samplesheet=$TAPIR/examples/fastq_example/MadeupSamplesheet_ForExample.csv
+echo $?
+```
+
+And, if everything works, we try it for real:
+
+```
+nohup snakemake -s $TAPIR/snakemakes/bcl2bam.smk -c256 --config Fastqdir=Lowpass Samplesheet=$TAPIR/examples/fastq_example/MadeupSamplesheet_ForExample.csv &> output.outerr &
+echo $?
+```
+
+Remember, you can always dial down the settings (having Tapir take longer on cheaper hardware). E.g., this would use 8 cpus and ~12Gb of memory:
+
+```
+nohup snakemake -s $TAPIR/snakemakes/bcl2bam.smk -c8 --config Fastqdir=Lowpass Samplesheet=$TAPIR/examples/fastq_example/MadeupSamplesheet_ForExample.csv --configfile  $TAPIR/configs/config_v_2_low_mem.yaml &> output.outerr &
+echo $?
+```
 
 ### Files made
 In general, the directory structure looks like:

@@ -343,7 +343,7 @@ def gather_all_reports(wildcards):
         files.extend( \
             expand("{outdir}/Sample_Data/{dirname}/{rundir}/Reports/{samplename}.la.md.{suffix}", \
             outdir=wildcards.outdir, rundir=wildcards.rundir, dirname=samp, samplename=samp,\
-            suffix=["bqsr.demix.summary", "r1_fastqc.zip", "flagstat", "samstats.cov", "bqsr_summary.pdf"]))
+            suffix=["bqsr.demix.summary", "r1_fastqc.zip", "flagstat", "samstats.cov"])) # bqsr plots summary removed; isn't always made; as samtools.cov file is made from the bqsr bam, the la.md.bqsr bam file is made, which is what we actually need
             #mixure analysis, fastqc, samtools flagstat, samstats (coverage estimate), and bqsr-post hoc summary
 
             
@@ -356,8 +356,7 @@ def gather_all_reports(wildcards):
             outdir=wildcards.outdir, rundir=wildcards.rundir, dirname="Offtargets", samplename=samp)) # flagstat
         files.extend( \
             expand("{outdir}/Sample_Data/{dirname}/{rundir}/Reports/{samplename}.la.md.samstats.cov",
-            outdir=wildcards.outdir, rundir=wildcards.rundir, dirname="Offtargets", samplename=samp)) # samstats 
-    print(files)  
+            outdir=wildcards.outdir, rundir=wildcards.rundir, dirname="Offtargets", samplename=samp)) # samstats   
 
     return files
     
@@ -569,7 +568,7 @@ rule bwa_mem_map:
 			sm=$(echo {wildcards.samplename} | cut -d'_' -f 1)
 			pu=$(echo $header | cut -d':' -f 3,4 --output-delimiter='_')
 			rg=$(echo "@RG\tID:$seqID"_"$id\tSM:$sm\tLB:{params.library}\tPL:ILLUMINA")
-			({params.bwa_binary} mem  -R $(echo "@RG\\tID:$sm"_"$seqID"_"$id\\tSM:$sm\\tLB:{params.library}\\tPL:ILLUMINA\\tPU:$pu") \
+			({params.bwa_binary} mem -R $(echo "@RG\\tID:$sm"_"$seqID"_"$id\\tSM:$sm\\tLB:{params.library}\\tPL:ILLUMINA\\tPU:$pu") \
 			-t {threads} \
 			-M {params.ref} \
 			{read1} {read2} | \
@@ -736,12 +735,23 @@ rule gatk_apply_bqsr:
     params:
         binary=GX.getBinary("gatk"),
         ref=hg38,
-        compression_level=9
+        compression_level=9,
+        samtools_binary=samtools
     shell:# the ln -s command makes a foo.bam.bai index file ; by default, GATK makes their index files as foo.bai instead (which breaks some downstream tools)
         """
-        {params.binary} --java-options '{config[gatkParams][javaoptions]} -Dsamjdk.compression_level={params.compression_level}' ApplyBQSR --QUIET true --create-output-bam-index true -R {params.ref} -O {output} --bqsr-recal-file {input.recal_file} -I {input.bam} &> {log}
-        # makes a .bam.bai version of the .bai file, too. 
-        cp `echo {output} | rev | cut -b2- | rev`i {output}.bai 
+        set +e
+        
+        {params.binary} --java-options '{config[gatkParams][javaoptions]} -Dsamjdk.compression_level={params.compression_level}' ApplyBQSR --QUIET true --create-output-bam-index true -R {params.ref} -O {output} --bqsr-recal-file {input.recal_file} -I {input.bam} &> {log} && \
+            cp `echo {output} | rev | cut -b2- | rev`i {output}.bai #       makes a .bam.bai version of the .bai file, too. 
+        # it's exceedingly rare, but BQSR can fail; further, it can write a corrupt BAM file when it does.
+        # in practice, this appears to occur when there is literally no usable data (a few reads, but not proper pairs)
+        # this is a bandaid; we write a trivial BAM that is just the header.
+        if [ $? -ne 0 ]
+        then
+            {params.samtools_binary} view -H -b -o {output} {input.bam}
+            {params.samtools_binary} index {output}
+        fi
+        exit 0
         """
 
 # note: requires R packages: gplots and gsalib (legacy code; may be difficult to install)

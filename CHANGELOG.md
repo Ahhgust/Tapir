@@ -1,7 +1,19 @@
 # Changelog
 
+### Beta changes (post-publication)
 
-### Beta
+### Alpha changes (pre-publication)
+4/2025
+-  Bugfix with GATK's BQSR
+	-  In some verybizarre cases, BQSR produces a corrupt BAM file.
+		-  In the one and only case, the BAM file had two unmapped read pairs (one of each pair was an empty fastq record)
+	-  When BQSR fails, Tapir now produces an empty BAM file (based on the header to the pre-bqsr file)
+	   -  No BQSR plots are produced in this case, however.
+	-  The final rule (repro) no longer requires the BQSR *plots*
+	   -  Though it does require BQSR bams 
+	   -  This affects "snakemake --keep-going", which does not work as expected (IMO, a bug in snakemake)
+
+	
 3/2025
 -  Support for multiple config files added.
 	-  at most 1 config can be used at any 1 time.
