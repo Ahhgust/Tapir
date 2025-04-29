@@ -4,6 +4,7 @@ import GenomixHelper
 VERSION=0.30
 # Changelog:
 # added support for only emitting SNPs (as opposed to SNVs).
+# See CHANGELOG.md for all changes
 
 # current_basedir returns the path of this snakemake script
 # bin/ and resources/ are in sibling directories; refer to them relative to ROOT

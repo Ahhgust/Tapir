@@ -4,6 +4,7 @@
 
 ### Alpha changes (pre-publication)
 4/2025
+BCL2BAM: 0.3 -> 0.301
 -  Bugfix with GATK's BQSR
 	-  In some very bizarre cases, BQSR produces a corrupt BAM file.
 		-  In the one and only case, the BAM file had two unmapped read pairs (one of each pair was an empty fastq record)
@@ -12,7 +13,7 @@
 		-  When BQSR fails (non-zero exit status), Tapir now produces an empty BAM file (based on the header to the pre-bqsr file)
 			-  No BQSR plots are produced in this case, however.
 		-  The final rule (repro) no longer requires the BQSR *plots*
-			-  Though it does require BQSR bams, which are the things you need to genotype... 
+			-  Though it does require BQSR bams, which are what you actually need to estimate genotypes... 
 			-  I suspect that the final rule (repro; which looks for all files to have been made) is what causes the poor `--keep-going behavior`
 			-  `snakemake --keep-going ...` now works as expected
 	
