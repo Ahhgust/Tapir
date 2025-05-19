@@ -22,3 +22,15 @@ Reporting <br>
 -  ![Click here](docs/Step2.md) Step 2 converts 1 (or more) BAM files into data suitable for upload to GEDmatch.
 
 
+## Full virtualization
+
+We provide a virtual machine image of Tapir. Installation instructions are found here:
+
+-  ![Click here](docs/FullVirtualization.md) for installation instructions.
+
+## More information
+
+-  ![Click here](https://info-ee.surrey.ac.uk/Teaching/Unix/) *External Link*. Using Tapir requires some basic knowledge of unix. I recommend tutorials 1-6 found in the provided link.
+-  ![Click here](docs/UsingTapirsTools.md) Tapir uses many genomic tools. Here's how you can use them too!
+-  ![Click here](docs/Files.md) Tapir makes *a lot* of files. What are they?
+-  ![Click here](docs/General_Troubleshooting.md) Okay, you ran Tapir, and something went wrong. Here are some pointers

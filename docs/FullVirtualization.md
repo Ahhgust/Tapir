@@ -43,8 +43,8 @@ And make sure that the `Virtual Machine Platform` and `Windows Hypervisor Platfo
 
 
 ### Download the Tapir image
-I would let this run overnight; the image is big, and because the powers that be make sharing large files exceptionally hard, I'm hosting this file on one of my home computers.
-Click [here] to begin the download.
+I would let this run overnight; the image is big, and because the powers that be make sharing large files exceptionally hard, I'm hosting this file on one of my own dime...
+Click [here](https://www.dropbox.com/scl/fi/6rcdh0wttdctm894h9zx1/TapirOnUbuntu.ova?rlkey=5v29kk1ks1ieo8ow9tbwa2mhs&st=04p52yti&dl=1) (Note: dropbox link) to begin the download.
 
 ### Import the Virtual box image
 
