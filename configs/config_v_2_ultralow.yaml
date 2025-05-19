@@ -183,7 +183,7 @@ bcf223andmeParams:
     binary: "bin/bcf223andme.py"
     snpfile: "resources/snppanel_autos_x.vcf.gz" # only used when making the "SNP" files.
     bcffilt: "" # only used when making the "SNP" files. Additional arguments to bcftools can be placed here.
-    glimpse2: "-x -b 1.7 -p 0.95" # CHANGED HERE (from standard)(bcf223andme.py) filters for glimpse2; Include the X; Bayes Factor > 1.7; Genotype Posterior > 0.95
+    glimpse2: "-x -b 100 -p 0.50" # CHANGED HERE (from standard)(bcf223andme.py) filters for glimpse2; Include the X; Bayes Factor > 100; Genotype Posterior > 0.5
     bcftools: "-x -q 20" # (bcf223andme.py)  filters for bcftools; Include the X; Genotype quality >= 20
     
     

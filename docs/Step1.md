@@ -84,7 +84,7 @@ The dry-run will also parse the provided sample sheet; there are a lot of ways t
 A more complete command might look like:
 
 ```
-snakemake -n  -s $TAPIR/snakemakes/bcl2bam.smk  -c256 --config Bcldir=/eva/staging/Novaseq/Novaseq/Output/250103_A01324_0120_BHWGY2DMXY Samplesheet=./MySampleSheet.csv Experiment=WriteDataHere --configfile  $TAPIR/configs/config_v_2_low_mem.yaml
+snakemake -n  -s $TAPIR/snakemakes/bcl2bam.smk  -c256 --config Bcldir=/eva/staging/Novaseq/Novaseq/Output/250103_A01324_0120_BHWGY2DMXY Samplesheet=./MySampleSheet.csv Experiment=WriteDataHere --configfile $TAPIR/configs/config_v_2_low_mem.yaml
 echo $?
 ```
 
@@ -95,13 +95,17 @@ If everything looks good, try the command for real: (note, no `-n`).
 nohup snakemake -s $TAPIR/snakemakes/bcl2bam.smk  -c256 --config Bcldir=/eva/staging/Novaseq/Novaseq/Output/250103_A01324_0120_BHWGY2DMXY &> log &
 ```
 
-Which runs the command in the background (trailing &) and lets you exit/logout of the shell without aborting the call (nohup; no hardware interrupt)
+Which runs the command in the background (trailing `&`) and lets you exit/logout of the shell without aborting the call (nohup translate into no hardware interrupt)
 
 <br>
 Note that when Step 1 completes, that would be a good time to evaluate both sample-level QC metrics; see ![here](./QC.md) <br>
 As well, run-level metrics are of key importance.
 
 ## How to (FASTQ)
+
+BCL is much preferred over FASTQ. In short, how FASTQs are extracted matters, and the defaults provided by Illumina are not so great (for challenged samples). <br>
+(Tapir doesn't use the defaults, I would add). <br>
+However, if you insist on using Fastqs, you can do so a la<br><br>
 
 Input requirements: <br>
 -	FASTQS (paired end sequencing only; Illumina only)
