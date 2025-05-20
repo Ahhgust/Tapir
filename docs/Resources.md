@@ -81,4 +81,4 @@ Woerner et al. 2025 refers to: (The tapir document; update when published) <br>
 -  X_nonpar.txt
     -  See `7_matching_X.txt`
     -  plain text file containing: "chrX:2781480-155701382"
-	-  This are the canonical coordinates of the non-pseudoautosomal region of chromosome X
+	-  The canonical coordinates of the non-pseudoautosomal region of chromosome X
