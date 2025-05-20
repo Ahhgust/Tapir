@@ -4,8 +4,10 @@ Specifically, here's an accounting of the files in the `resources/` directory in
 See [File.md](Files.md) for an accounting of the files *made* by Tapir.
 <br>
 Unless stated otherwise, all coordinates are relative to the hg38 reference genome. <br>
-Woerner et al. 2022 refers to: https://doi.org/10.1016/j.fsigen.2022.102785) <br>
-Woerner et al. 2025 refers to: (The tapir document; update when published) <br>
+Woerner et al. 2022 refers to: [External Link](https://doi.org/10.1016/j.fsigen.2022.102785) <br>
+Woerner et al. 2025 refers to: (The tapir manuscript; currently under review. TODO: update when published) <br>
+Koenig et al. refers to: [External Link](10.1101/gr.278378.123)
+Poznik et al. [External Link](10.1126/science.1237619)
 
 -  7_matching_X.txt
     - See `X_nonpar.txt`
@@ -20,7 +22,7 @@ Woerner et al. 2025 refers to: (The tapir document; update when published) <br>
 -  bcftools_call/
 	-  SNVs (sites + alleles) used for genotyping with bcftools; tsvs, in `bcftools call` format.
     -  See Woerner et al. 2025 for extended details
-	-  In brief, HGDP+1000 Genomes samples from Koenig et al. 2025., relatives removed, sites with a PP (phasing probability) annotation removed.
+	-  In brief, HGDP+1000 Genomes samples from Koenig et al. , relatives removed, sites with a PP (phasing probability) annotation removed.
 	-  For the X see the chrX/ documentation
 -  chrX/
     -  Information necessary to genotype the X chromosome.
@@ -67,8 +69,9 @@ Woerner et al. 2025 refers to: (The tapir document; update when published) <br>
 	-  Genotypes from Koenig et al., GSA Sites, Plink format.
 -  Poznik.YChromCallable.hg38.bed
     -  Not currently used by Tapir.
-    -  Genomic positions from Poznik et al. 2013 [External Link](10.1126/science.1237619 )
+    -  Genomic positions from Poznik et al. 
 	   -  Sites argued to be suitable for variant calling on the Y chromosome.
+	      - Their "callability" mask.
 	   -  May be used soon for X/Y ploidy estimation (sex/mixture assessments)
 	   -  Genomic coordinates were converted to hg38 using liftOver (command line tool; defaults)
 -  snppanel_autos_x.vcf.gz
