@@ -6,8 +6,8 @@ See [File.md](Files.md) for an accounting of the files *made* by Tapir.
 Unless stated otherwise, all coordinates are relative to the hg38 reference genome. <br>
 Woerner et al. 2022 refers to: [External Link](https://doi.org/10.1016/j.fsigen.2022.102785) <br>
 Woerner et al. 2025 refers to: (The tapir manuscript; currently under review. TODO: update when published) <br>
-Koenig et al. refers to: [External Link](10.1101/gr.278378.123)
-Poznik et al. [External Link](10.1126/science.1237619)
+Koenig et al. refers to: [External Link](https://doi.org/10.1101/gr.278378.123) <br>
+Poznik et al. [External Link](https://doi.org/10.1126/science.1237619) <br>
 
 -  7_matching_X.txt
     - See `X_nonpar.txt`
