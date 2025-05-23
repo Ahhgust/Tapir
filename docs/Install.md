@@ -122,7 +122,7 @@ Tapir can be run as a virtual environment; we find Mamba to be a bit more stable
 ### Tapir using Mamba (recommended)
 
 Install Mamba <br><br>
-*Skip this step if Conda is already installed* <br>
+*Skip this step if Mamba is already installed* <br>
 Download Mamba!
 ```
 cd ~
@@ -162,7 +162,7 @@ Answer 'Y' (yes) to all prompts.
 
 ### Tapir using Conda (less recommended)
 Mamba is (largely seen as) a drop-in replacement for Conda; Conda is, well, slower and dumber. <br>
-Regardless, here are instructions for installing the Tapir envioronment in conda.
+Regardless, here are instructions for installing the Tapir environment in conda.
 *Skip this step if Conda is already installed*
 ```
 cd ~/
