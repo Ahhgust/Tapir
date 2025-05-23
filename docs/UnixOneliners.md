@@ -29,12 +29,12 @@ Grabs the filename and mean read depth (coverage)
 If you see "large" values (>0.01x), that may indicate carry over. <br>
 
 <br>
-We sometimes also want to <br>
+We sometimes also want to look at our reads <br>
 
 ```
 fgrep properly Sample_Data/Offtargets/*/Reports/*flagstat | sed 's/+ 0 properly paired //' | tr ':()'' ' '
 ```
-Reports the number (and %) of properly paired reads.
+which reports the number (and %) of properly paired reads.
 
 
 ### How much data do I have?
