@@ -20,7 +20,7 @@ $TAPIR/bin/gatk --list
 ```
 
 For those that are truly keen on doing this routinely (and would like to NOT write `$TAPIR` a bunch of times, you can always add `$TAPIR/bin` to your PATH. 
-Here is an [External link](https://askubuntu.com/questions/60218/how-to-add-a-directory-to-the-path) that provides genetic instructions for adding a directory to your PATH.
+Here is an [External link](https://askubuntu.com/questions/60218/how-to-add-a-directory-to-the-path) that provides generic instructions for adding a directory to your PATH.
 Doing so will let you just type:
 ```
 gatk --list
