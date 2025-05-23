@@ -48,6 +48,16 @@ As well as the %/number of properly paired reads as:
 fgrep properly Sample_Data/*/*/Reports/*flagstat | sed 's/+ 0 properly paired //' | tr ':()' ' ' | fgrep -v Offtargets
 ```
 
+### Are my samples mixtures?
+
+```
+$TAPIR/bin/fcat.pl -h Sample_Data/*/*/Reports/*demix.summary
+```
+
+See [QC.md](QC.md) for some ideas on how to interpret the output of *Demixtify*.
+
+
+
 ### What are my call rates?
 Okay, the call-rate is a little sticky. But the raw number of genotype calls can be had a la:
 For glimpse:
