@@ -1,7 +1,7 @@
 # One liners!
 Tapir is a unix utility. Here are some helpful "one-liners" (full disclosure; may not be just one line) to help pull useful bits out of Tapir.
-All one liners print to screen; you can copy and paste data from the screen to Excel
-When you do go to (in Excel), and select on column A (ie, where you pasted the data)
+All one liners print to screen; you can copy and paste data from the screen to Excel. <br>
+When you do go to (in Excel), and select on column A (ie, where you pasted the data) <br>
 Data -> Text to Columns -> Delimited -> (select Tab and Space, as well as "Treat consecutive delimiters as one")
 Doing so will make you a nice tabular excel worksheet.
 
