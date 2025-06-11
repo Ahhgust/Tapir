@@ -62,11 +62,11 @@ See [QC.md](QC.md) for some ideas on how to interpret the output of *Demixtify*.
 Okay, the call-rate is a little sticky. But the raw number of genotype calls can be had a la:
 For glimpse:
 ```
-for file in Sample_Data/*/Uploads/glimpse2/*snps.tsv.gz; do echo -n $file ' '; zcat $file | wc -l; done
+for file in Sample_Data/*/Uploads/glimpse2/*snps.tsv.gz; do echo -n $file ' '; zgrep -c -v '#' $file; done
 ```
 For bcftools:
 ```
-for file in Sample_Data/*/Uploads/bcftools/*snps.tsv.gz; do echo -n $file ' '; zcat $file | wc -l; done
+for file in Sample_Data/*/Uploads/bcftools/*snps.tsv.gz; do echo -n $file ' '; zgrep -c -v '#'  $file; done
 ```
 This gives you the number of *snps* (i.e., SNVs with MAF>1%) typed by Tapir.
 
