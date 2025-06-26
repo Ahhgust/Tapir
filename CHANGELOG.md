@@ -3,6 +3,10 @@
 ### Beta changes (post-publication)
 
 ### Alpha changes (pre-publication)
+
+# 6/18/2025
+-  Update to bcf223andme.py:
+	-  -v option added; it now can create (identically filtered) VCF and 23andme files.
 6/11/2025
 -  Bugfix with bcf223andme.py
 	-  Apparently GEDmatch needs a bit more info in the header of the 23andme file for it to upload.

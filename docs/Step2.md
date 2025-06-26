@@ -103,4 +103,21 @@ snakemake -n -c 3 -s $TAPIR/snakemakes/bams2genotypes.smk --configfile $TAPIR/co
 
 Only using 3 cores is very limiting; GLIMPSE is memory intensive, however. 3 works on my laptop, but consider ramping this value up if you have more memory.
 
+Sometimes it's useful to run *every* sample through step 2
+From the `Sample_Data` directory, you can do the following:
+```
+for dir in `ls -d1 * | egrep -v 'Undetermined|Offtargets|gtcommands'`;
+do
+echo "snakemake -d $dir -c 16 -s $TAPIR/snakemakes/bams2genotypes.smk";
+done > gtcommands
+```
 
+Which will make a text file `gtcommands`; each line in it is a separate unix command that will genotype some sample. <br>
+In gory detail, `ls -d1` lists all files, treating directories as files (note that's a one (1) not an el (l). The egrep command will remove the names in the pattern shown (we don't want to genotype the Undetermined data), and then we `echo` (unix-speak, print) the unix command we'd like to run. Feel free to change the `-c 16` to an appropriate value for your system. <br>
+You can genotype all samples in parallel using:
+
+```
+parallel -j 10 < gtcommands &> gtcommands.outerr &
+```
+
+This will genotype up to 10 samples at a time, using no more than 10 (`-j 10`) x 16 (`-c 16`)=160 CPUs, which is fine for a moderately provisioned server (maybe 60+ CPUs?). On my laptop I'd use `-c 3` and `-j 1`, as that's a bit bareboned.

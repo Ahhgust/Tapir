@@ -87,10 +87,10 @@ if __name__ == "__main__":
     # Room to grow
     # We can onsider multiple genotypers. For now, glimpse is it.
     formatFilter='GP'
-    fLevels = [0.50, 0.60, 0.70, 0.80, 0.90, 0.95, 0.99]
+    fLevels = [0.50, 0.75, 0.90, 0.95, 0.99]
 
     infoFilter='RAF'
-    iLevels= [1,4,16,64,256,512] # note that the filter is not on the RAF, but on the Bayes Factor (which is a function of the RAF)
+    iLevels= [1,5,10,50,100,200, 500, 1000] # note that the filter is not on the RAF, but on the Bayes Factor (which is a function of the RAF)
 
 
     allPairs = AllPairs(fLevels, iLevels)
