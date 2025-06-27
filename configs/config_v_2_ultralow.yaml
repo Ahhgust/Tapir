@@ -182,6 +182,8 @@ sexchromosomeParams:
 bcf223andmeParams:
     binary: "bin/bcf223andme.py"
     snpfile: "resources/snppanel_autos_x.vcf.gz" # only used when making the "SNP" files.
+    annotationsfile: "resources/hgdp1kgp_autos_sites.filtered.SNV_INDEL.phased.shapeit5.unrelateds.nopp.gnomad3_1_2anno.hg19.vcf.gz" # population allele frequencies (hg19) come 
+    annotations: "AF_nfe,AF_fin,AF_afr,AF_ami,AF_eas,AF_sas,AF_amr,AF_asj,AF_mid" # add allele frequency information the the following populations.
     bcffilt: "" # only used when making the "SNP" files. Additional arguments to bcftools can be placed here.
     glimpse2: "-x -b 100 -p 0.50" # CHANGED HERE (from standard)(bcf223andme.py) filters for glimpse2; Include the X; Bayes Factor > 100; Genotype Posterior > 0.5
     bcftools: "-x -q 20" # (bcf223andme.py)  filters for bcftools; Include the X; Genotype quality >= 20
