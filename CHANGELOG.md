@@ -3,7 +3,10 @@
 ### Beta changes (post-publication)
 
 ### Alpha changes (pre-publication)
-
+# 6/26/2025
+-  Updated bcf223andme.py:
+	-  -d this estimates the observed and expected heterozygosity (wrt to multiple population groups). Requires GNOMAD annotations
+	-  bcf223andme is now called with annotations from gnomad (SNPs VCF files only; annotations are in hg19)
 # 6/18/2025
 -  Update to bcf223andme.py:
 	-  -v option added; it now can create (identically filtered) VCF and 23andme files.

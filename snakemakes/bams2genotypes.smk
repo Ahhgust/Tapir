@@ -518,6 +518,7 @@ rule hg19_to_23andme_snps:
     output:
         snps="Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.23andme.snps.tsv.gz",
         args="Final_Reports/args.{samplename}.{suffix}.{caller}.txt",
+        snpsum="Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.23andme.snpsummary.tsv",
         cfile="Final_Reports/config.{samplename}.{suffix}.{caller}.csv"       
     log:
         "Logs/{samplename}.{suffix}.{caller}.23andme.snps.log"
@@ -527,6 +528,8 @@ rule hg19_to_23andme_snps:
         bcftoolsargs=GX.getParam("bcf223andmeParams", "bcffilt"),
         snpfile=GX.getParam("bcf223andmeParams","snpfile"),
         filt=getVcfFilters,
+        annoFile=GX.getParam("bcf223andmeParams","annotationsfile"),
+        annos=GX.getParam("bcf223andmeParams","annotations"),
         configFile=configpath,
         versionNumber=VERSION,
         arguments=" ".join(sys.argv)
@@ -536,8 +539,9 @@ rule hg19_to_23andme_snps:
            # filter the genotypes (depending on the caller; GQ20 equivalent by default)
            # and create a "23andme" file (using bcf223andme.py)
         """
-        ({params.bcftools} view -Ou -U {params.bcftoolsargs} -T {params.snpfile} -e "INFO/OriginalContig!=CHROM" {input} | {params.bcftools} norm -Ov -m+  | \
-        {params.binary} {params.filt} -o | gzip -9 > {output.snps} )  2> {log}
+        ({params.bcftools} annotate -Ou -a {params.annoFile} -c {params.annos}  {input} | \
+        {params.bcftools} view -Ou -U {params.bcftoolsargs} -T {params.snpfile} -e "INFO/OriginalContig!=CHROM" | {params.bcftools} norm -Ov -m+  | \
+        {params.binary} {params.filt} -d {output.snpsum} -o | gzip -9 > {output.snps} )  2> {log}
         echo {params.arguments} > {output.args}
         echo BCL2BAMs Version: {params.versionNumber} >> {output.args}
         cp -L {params.configFile} {output.cfile}

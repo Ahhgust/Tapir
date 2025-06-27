@@ -65,7 +65,7 @@ class GenomixHelper:
         
         # looks for the binary associated w/ gatk
         if key not in config[arg]:
-            print("Failed to get the resource binary: ", arg, key, file=sys.stderr)
+            print("Failed to get the resource binary: ", arg, key, config[arg], file=sys.stderr)
             exit(1)
             
         prog = config[arg][key]

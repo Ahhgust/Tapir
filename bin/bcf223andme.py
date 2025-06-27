@@ -16,8 +16,9 @@ import gzip
 
 EPSILON=0.0001
 VERSION=0.001
-
-POPS=set( ["AF_nfe", "AF_afr", "AF_ami", "AF_eas", "AF_sas"] )
+# Note that gnomad includes some rather exotic populations. (eg, Amish). We probably shouldn't be using those to estimate Theta (or at least too many of them)
+# see: https://gnomad.broadinstitute.org/news/2023-11-genetic-ancestry/ to see what these labels mean
+POPS=set( ["AF_nfe", "AF_afr", "AF_amr", "AF_eas", "AF_sas"] )
 AF_prefix="AF_"
 
 
@@ -43,7 +44,7 @@ def getInfo(infoStr, query, cast=str):
 def hudsonFst(afDictionary):
     '''
     See Bhatia et al (doi/10.1101/gr.154831.113)
-    SOM, Derivation of Hudson Estimator.
+    SOM, Derivation of Richard Hudson's estimator of Fst.
     This estimates the mean N, mean D, and takes Fst a the ratio of means ( N/D )
     takes in a dictionary (pop group -> ref allele frequency)
     '''
