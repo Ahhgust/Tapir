@@ -309,10 +309,11 @@ The summaries are as follows:
 -  Error rate
    -  Unfiltered (`perror_unfilt_mean`) *AND*
    -  Filtered (`perror_filt_mean`)
-      -  Uses either genotype quality or the genotype posterior
+      -  Uses either genotype quality or the genotype posterior to estimate the (expected) error rate
+	  -  Assumes that the quality/posterior values are well-calibrated.
 -  Quality bins (unfiltered)
-   -  Using either the genotype quality (PL) *OR*
-   -  The genotype posterior (Phred-encoded) (GQ)
+   -  Using either the genotype quality *OR*
+   -  The genotype posterior (Phred-encoded)
       -  values clamped to Q50
    -  Make a histogram of counts
       - e.g., `phred_qbin_GP 0_5 100` would say that there are 100 instances of genotype quality scores between 0 and 5.
