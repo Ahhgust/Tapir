@@ -7,7 +7,7 @@ This is my attempt to document all non-obvious and/or non-trivial files.
 -	[Run_Data](#Run-Data) Custom files from Tapir (Step 1)
 -	[Sample_Data](#Sample-Data) Custom files from Tapir (Step 2)
 
-Forgot what a term means, consult the [Glossary](Glossary.md)
+Forgot what a term means? Please consult the [Glossary](Glossary.md)
 
 ## What is (and is not) kept
 Tapir creates many files; not all are retained. Some are explicitly not retained; 
@@ -83,7 +83,7 @@ The *size* of the fastqs can be a rough indicator of performance. <br>
 In particular, FASTQs from the unclaimed indexes (typically UDI/UDP as a prefix) can be diagnostic--
  if these files are very large, you likely have an error in your sample sheet (or worse; contamination).
 
-## Sample Data
+## Sample Summaries
 From step 1 of Tapir. <br>
 ### Sample_Data/Undetermined/
 This directory has all of the data related to the "Undetermined" fastqs. <br>
@@ -273,7 +273,7 @@ We use the following interpretation scheme:
 Demixtify also estimates the sequence error rate based on the prevalence of alleles other than the two potential alleles (e.g., at C/T sites, Demixtify will tabulate the fraction of G and A alleles to estimate an overall rate of error).
 <br>A high sequence error rate can be indicative of real problems; e.g., runs with poor phasing/prephasing. If there is *bias* in which alleles arise (ie, most tools assume that sequence error is uniform; when this assumption is violated that is a kind of bias), then some of your downstream tools may misbehave. BQSR fixes some of these issues, but not all. 
 
-### snpsummary
+### Snpsummary
 
 The "snpsummary" file contains summary statistics on genotypes. Summaries can either be "unfiltered" (no QC, aka, no filtering on genotype quality (bcftools) or the genotype posterior (glimpse)).
 <br>
