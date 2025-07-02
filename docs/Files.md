@@ -151,8 +151,6 @@ These are sample+run specific (so the same directory as the bqsr reports). <br>
 Here's an [External link](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) to what these reports look like. <br>
 Of note, we run fastqc on the aligned reads from the BAMs, which is a bit atypical (but generating 4x2=8 reports per sample; r1 and r2, 4 lanes) is crazy stupid and redundant. This is less information at least :)
 
-
-
 ## Sample Data
 (Step 2 of Tapir) <br>
 Files in the `Sample_Data` directory are sample specific.
@@ -274,3 +272,48 @@ We use the following interpretation scheme:
 **Sequence error** <br>
 Demixtify also estimates the sequence error rate based on the prevalence of alleles other than the two potential alleles (e.g., at C/T sites, Demixtify will tabulate the fraction of G and A alleles to estimate an overall rate of error).
 <br>A high sequence error rate can be indicative of real problems; e.g., runs with poor phasing/prephasing. If there is *bias* in which alleles arise (ie, most tools assume that sequence error is uniform; when this assumption is violated that is a kind of bias), then some of your downstream tools may misbehave. BQSR fixes some of these issues, but not all. 
+
+### snpsummary
+
+The "snpsummary" file contains summary statistics on genotypes. Summaries can either be "unfiltered" (no QC, aka, no filtering on genotype quality (bcftools) or the genotype posterior (glimpse)).
+<br>
+Likewise, statistics can be filtered (*after* QC filtering) <br>
+All summaries are autosomal (only). <br>
+e.g., the number of autosomal genotypes:
+```
+zegrep -c -v '#|X' Uploads/glimpse2/Combined.la.md.bqsr.glimpse2.hg19.23andme.snps.tsv.gz
+```
+Should match the number of genotype calls <br>
+(the 3rd column from: `perror_filt_mean`)
+
+The summaries are as follows:
+-  Heterozygosity (filtered)
+   -  Observed (`observed_het`)
+      -  This is the fraction of sites called as heterozygous (2nd column)
+	  -  And the total number of sites considered (3rd column)
+   -  Expected (e.g., `AF_nfe_ehet`)
+      -  Expectations are per population
+ 	     -  See gnomad (v3.1.2) [External Link](https://gnomad.broadinstitute.org/news/2017-02-the-genome-aggregation-database/)
+	     -  `AF_nfe_ehet` uses allele frequencies from Non-Finnish Europeans
+	  -  Expectations are theta-corrected 
+	     -  2pq-(1-fst) 
+		 -  Fst is estimated per locus, using the (somewhat naive) estimator of Hudson [External Link](doi.org/10.1093/genetics/132.2.583)
+-  Rare homozygotes (filtered)
+   -  See heterozygotes
+   -  Of the sites with a minor allele frequency (MAF) < 10%
+      -  What fraction are homozygous minor?  
+      -  And how many might be expected?
+         -  (Note, also theta corrected)	  
+   -  In general, GEDmatch's IBD segment tools are pretty insensitive to heterozygotes. 
+      -  But they are quite sensitive to rare homozygotes
+-  Error rate
+   -  Unfiltered (`perror_unfilt_mean`) *AND*
+   -  Filtered (`perror_filt_mean`)
+      -  Uses either genotype quality or the genotype posterior
+-  Quality bins (unfiltered)
+   -  Using either the genotype quality (PL) *OR*
+   -  The genotype posterior (Phred-encoded) (GQ)
+      -  values clamped to Q50
+   -  Make a histogram of counts
+      - e.g., `phred_qbin_GP 0_5 100` would say that there are 100 instances of genotype quality scores between 0 and 5.
+	  

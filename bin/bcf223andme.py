@@ -13,13 +13,18 @@
 import sys
 import argparse
 import gzip
+import math
 
 EPSILON=0.0001
 VERSION=0.001
-# Note that gnomad includes some rather exotic populations. (eg, Amish). We probably shouldn't be using those to estimate Theta (or at least too many of them)
+# Note that gnomad includes some rather exotic populations. (eg, Amish). 
+# We probably shouldn't be using too many isolated populations to estimate Theta... for now, we're sticking with admixed and/or more traditional population groups
 # see: https://gnomad.broadinstitute.org/news/2023-11-genetic-ancestry/ to see what these labels mean
 POPS=set( ["AF_nfe", "AF_afr", "AF_amr", "AF_eas", "AF_sas"] )
 AF_prefix="AF_"
+PRECISION=6
+
+RARE_MAF=0.10 # "rare" homozygotes; the minor allele freq
 
 
 def getInfo(infoStr, query, cast=str):
@@ -45,6 +50,8 @@ def hudsonFst(afDictionary):
     '''
     See Bhatia et al (doi/10.1101/gr.154831.113)
     SOM, Derivation of Richard Hudson's estimator of Fst.
+    Note that the Hudson estimator is a bit naive, but it only requires allele frequency information
+    This is less of a problem here as our sample sizes are quite large (not so much for the Amish however...)
     This estimates the mean N, mean D, and takes Fst a the ratio of means ( N/D )
     takes in a dictionary (pop group -> ref allele frequency)
     '''
@@ -174,13 +181,23 @@ if flags.B > 0:
 
 summaryStatsHandle=None
 expHets={}
+expHomMinor={}
 if flags.D:
    summaryStatsHandle=open(flags.D, "w")
 
 ntot=0
 nhet=0
 nhalt=0
+nhomminor=0 # only count RARE (really, infrequent is a better word; 10%MAF at most) minor homozygotes
+nrare=0
 header=[] 
+
+MAXQUAL=50
+qualbins = [0] * (MAXQUAL + 1)
+
+errorSumFilt=0.
+
+
 for line in sys.stdin:
     if line.startswith("##"):
         if flags.V:
@@ -275,6 +292,18 @@ for line in sys.stdin:
 
         tagLabels=sp[8]
         tagIndex=-1
+
+
+        # note this will not play nice w/ how the genotypes are printed (all letters concatenated)...
+        if not flags.K:
+                # skipping insertions.
+            if max( [ len(x) for x in finalgts ] ) > 1:
+                continue
+
+            # and deletions
+            if min( [ len(x) for x in finalgts ] ) < 1:
+                continue
+
         
         bf=prior=None
         if calculateBF:
@@ -314,13 +343,27 @@ for line in sys.stdin:
                 tagVals.sort()
                 if len(tagVals)< 2:
                     continue
+                q = min(tagVals[1], MAXQUAL)
+                qualbins[q] += 1
                 if tagVals[1] < flags.Q: # second-smallest likelihood is taken as the genotype quality. (this is the legacy GATK definition of genotype quality)
                     continue
+                    
+                errorSumFilt += math.pow(10, q/-10) # phred to probability conversion.
+                
             elif tag == 'GP': # used w/ GLIMPSE
                 tagVals = [float(i) for i in tagVals] # need reals
                 if len(tagVals) < 1:
                     continue
-                elif  max(tagVals) < flags.P: # posterior probability is too small.
+                q = max(tagVals) # genotype probability
+                if q > 0.999: # glimpse gives genoprobs of 1.0. this avoids log(0.0)
+                    q = MAXQUAL
+                else:
+                    q = round(-10* math.log10(1-q)) # phred, note we need the probability of error (1-q, not q)
+                    q = min(q , MAXQUAL) # clamped
+                    
+                qualbins[q] += 1                 
+                
+                if  max(tagVals) < flags.P: # posterior probability is too small.
                     continue
                     
                 
@@ -335,23 +378,14 @@ for line in sys.stdin:
                     else: # prior is 0 (can't happen) or none (shouldn't happen); let's just skip those...
                         print("Unexpected prior", line, file=sys.stderr)
                         continue
-
-
-        # note this will not play nice w/ how the genotypes are printed (all letters concatenated)...
-        if not flags.K:
-                # skipping insertions.
-            if max( [ len(x) for x in finalgts ] ) > 1:
-                continue
-
-            # and deletions
-            if min( [ len(x) for x in finalgts ] ) < 1:
-                continue
+                
+                errorSumFilt += 1.0-max(tagVals)
 
         if chrom[0] >= '0' and chrom[0] <= '9':
             ntot+=1
             if finalgts[0] != finalgts[1]:
                 nhet+=1
-            elif finalgts[0] != alleles[0]: # homozygous (else) and not equal to the reference
+            elif finalgts[0] != alleles[0]: # homozygous (else) and not equal to the reference (alleles[0])
                 nhalt+=1
         
             
@@ -360,13 +394,39 @@ for line in sys.stdin:
                 
                 afs = getAfs(sp[7], POPS)
                 fst = hudsonFst(afs)
+                    
                 if fst >= 0.:
+                    
+                    mfreq = sum(afs.values() ) / len(afs) # singular allele frequency is assumed.
+                    isRare = False
+                    if mfreq < RARE_MAF or mfreq > (1-RARE_MAF):
+                        isRare=True
                     for pop, freq in afs.items():
                         if pop not in expHets:
                             expHets[pop]=[0., 0]
                         expHets[pop][0] += (2 * freq * (1-freq))*(1-fst) 
                         expHets[pop][1] += 1
-        
+                        
+                        if pop not in expHomMinor:
+                            expHomMinor[pop] = [0., 0]
+                        
+                        if isRare:
+                            if freq < 0.5:
+                                expHomMinor[pop][0] += freq*freq + (1.0-freq)*freq*fst
+                            else:    
+                                expHomMinor[pop][0] += (1.0-freq)*(1.0-freq) + (1.0-freq)*freq*fst
+
+                        expHomMinor[pop][1] += 1
+                    
+                    if isRare:
+                        nrare+=1
+                        if finalgts[0] == finalgts[1]:  # homozygote                  
+                        
+                            if mfreq < RARE_MAF and finalgts[0] != alleles[0]: # alt allele is minor; 
+                                nhomminor += 1
+                            elif mfreq > (1.-RARE_MAF) and finalgts[0] == alleles[0]: # ref allele is minor
+                                nhomminor += 1
+                        
         if flags.V:
             print(line, end="", file=f)
         else:
@@ -378,13 +438,43 @@ if f is not None and f is not sys.stdout:
 if summaryStatsHandle is not None:
     if ntot < 1:
         print("No markers found...", file=sys.stderr)
-    else:
-        print("observed_het", round(nhet/ntot, 6), ntot, sep="\t", file=summaryStatsHandle)
+    elif tag:
+        # observed and expected heterozygosity
+        print("observed_het", round(nhet/ntot, PRECISION), ntot, sep="\t", file=summaryStatsHandle)
         for pop, e in expHets.items():
             if e[1] > 0:
-                print(pop + "_ehet", round(e[0]/e[1], 6), e[1], sep="\t", file=summaryStatsHandle ) 
+                print(pop + "_ehet", round(e[0]/e[1], PRECISION), e[1], sep="\t", file=summaryStatsHandle ) 
             else:
-                print(pop + "_ehet", "NaN", e[1], sep="\t", file=summaryStatsHandle )   
+                print(pop + "_ehet", "NaN", e[1], sep="\t", file=summaryStatsHandle )  
+        
+        rate = "NaN"
+        if nrare>0:
+            rate = round(nhomminor/nrare, PRECISION)
+        print("observed_rare_hom", rate, nrare, sep="\t", file=summaryStatsHandle)
+              
+        for pop, e in expHomMinor.items():
+            if e[1] > 0:
+                print(pop + "_rare_hom", round(e[0]/e[1], PRECISION), e[1], sep="\t", file=summaryStatsHandle ) 
+            else:
+                print(pop + "_rare_hom", "NaN", e[1], sep="\t", file=summaryStatsHandle ) 
+                
+        # marginal distribution of genotype quality (unfiltered genotypes, using quality from either bcftools or glimpse; both Phred scaled
+        s=0.
+        ws=0.
+        for i in range(MAXQUAL+1):
+            if qualbins[i]>0:
+                s += qualbins[i]
+                perror=pow(10, i/-10.0)
+                ws += qualbins[i] * perror
+        if s:
+            print("perror_unfilt_mean", round(ws/s, PRECISION), s, file=summaryStatsHandle ) #
+        else:
+            print("perror_unfilt_mean", "NaN", s, file=summaryStatsHandle )
+
+        print("perror_filt_mean", round(errorSumFilt/ntot, PRECISION), ntot, file=summaryStatsHandle ) 
+            
+        for i in range(0, MAXQUAL+1, 5):
+            print("phred_qbin_"+tag, "\t", i, "_", i+5, "\t", sum(qualbins[i:(i+5)]), sep="", file=summaryStatsHandle)
                 
     summaryStatsHandle.close()
 
