@@ -1,9 +1,8 @@
 import glob, os, sys, re, time, gzip
 import GenomixHelper
 
-VERSION=0.30
+VERSION=0.31
 # Changelog:
-# added support for only emitting SNPs (as opposed to SNVs).
 # See CHANGELOG.md for all changes
 
 # current_basedir returns the path of this snakemake script
@@ -518,7 +517,7 @@ rule hg19_to_23andme_snps:
     output:
         snps="Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.23andme.snps.tsv.gz",
         args="Final_Reports/args.{samplename}.{suffix}.{caller}.txt",
-        snpsum="Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.23andme.snpsummary.tsv",
+        snpsum="Final_Reports/{samplename}.{suffix}.{caller}.hg19.23andme.snpsummary.tsv",
         cfile="Final_Reports/config.{samplename}.{suffix}.{caller}.csv"       
     log:
         "Logs/{samplename}.{suffix}.{caller}.23andme.snps.log"

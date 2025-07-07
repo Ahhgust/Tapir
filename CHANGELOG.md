@@ -13,7 +13,7 @@
 6/11/2025
 -  Bugfix with bcf223andme.py
 	-  Apparently GEDmatch needs a bit more info in the header of the 23andme file for it to upload.
-	-  It looks like the keyword "23andme" is what's needed on the first line.
+	-  The keyword "23andme" is what's needed on the first line.
 4/2025
 BCL2BAM: 0.3 -> 0.301
 -  Bugfix with GATK's BQSR

@@ -1,7 +1,7 @@
 import glob, os, sys, re, time, gzip
 import GenomixHelper
 
-VERSION=0.301
+VERSION=0.31
 # List of changes
 # Added support for the MiSeq (by changing the CopyComplete.txt dependency when extracting BCLs)
 # See CHANGELOG.md for all changes

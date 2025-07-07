@@ -344,11 +344,14 @@ for line in sys.stdin:
                 if len(tagVals)< 2:
                     continue
                 q = min(tagVals[1], MAXQUAL)
-                qualbins[q] += 1
+                if chrom[-1] != "X":
+                    qualbins[q] += 1
+                
                 if tagVals[1] < flags.Q: # second-smallest likelihood is taken as the genotype quality. (this is the legacy GATK definition of genotype quality)
                     continue
-                    
-                errorSumFilt += math.pow(10, q/-10) # phred to probability conversion.
+                 
+                if chrom[-1] != "X":                 
+                    errorSumFilt += math.pow(10, q/-10) # phred to probability conversion.
                 
             elif tag == 'GP': # used w/ GLIMPSE
                 tagVals = [float(i) for i in tagVals] # need reals
@@ -361,7 +364,8 @@ for line in sys.stdin:
                     q = round(-10* math.log10(1-q)) # phred, note we need the probability of error (1-q, not q)
                     q = min(q , MAXQUAL) # clamped
                     
-                qualbins[q] += 1                 
+                if chrom[-1] != "X":
+                    qualbins[q] += 1                 
                 
                 if  max(tagVals) < flags.P: # posterior probability is too small.
                     continue
@@ -378,8 +382,8 @@ for line in sys.stdin:
                     else: # prior is 0 (can't happen) or none (shouldn't happen); let's just skip those...
                         print("Unexpected prior", line, file=sys.stderr)
                         continue
-                
-                errorSumFilt += 1.0-max(tagVals)
+                if chrom[-1] != "X":
+                    errorSumFilt += 1.0-max(tagVals)
 
         if chrom[0] >= '0' and chrom[0] <= '9':
             ntot+=1
@@ -416,7 +420,7 @@ for line in sys.stdin:
                             else:    
                                 expHomMinor[pop][0] += (1.0-freq)*(1.0-freq) + (1.0-freq)*freq*fst
 
-                        expHomMinor[pop][1] += 1
+                            expHomMinor[pop][1] += 1
                     
                     if isRare:
                         nrare+=1
@@ -454,9 +458,9 @@ if summaryStatsHandle is not None:
               
         for pop, e in expHomMinor.items():
             if e[1] > 0:
-                print(pop + "_rare_hom", round(e[0]/e[1], PRECISION), e[1], sep="\t", file=summaryStatsHandle ) 
+                print(pop + "_rare_ehom", round(e[0]/e[1], PRECISION), e[1], sep="\t", file=summaryStatsHandle ) 
             else:
-                print(pop + "_rare_hom", "NaN", e[1], sep="\t", file=summaryStatsHandle ) 
+                print(pop + "_rare_ehom", "NaN", e[1], sep="\t", file=summaryStatsHandle ) 
                 
         # marginal distribution of genotype quality (unfiltered genotypes, using quality from either bcftools or glimpse; both Phred scaled
         s=0.

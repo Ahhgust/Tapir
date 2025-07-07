@@ -61,7 +61,10 @@ def getInfo(tag, dat, callback=max, cast=float):
 def getFormat(tag, names, vals, callback=max, cast=float):
     names=names.split(":")
     vals = vals.split(":")
-
+    if len(names) != len(vals):
+        print(names, vals, file=sys.stderr)
+        return None
+        
     for i in range(len(names)):
         if names[i] == tag:
             v = [cast(f) for f in vals[i].split(",") if f != '.']
@@ -146,6 +149,9 @@ if __name__ == "__main__":
                 continue
             
             gps = getFormat(formatFilter, s[8], s[9], None)
+            if gps is None:
+                continue
+            
             gp = max(gps)
             if len(gps)>3:
                 continue
