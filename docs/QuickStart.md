@@ -26,7 +26,15 @@ it should give you the path of where TAPIR is installed. Anything less (e.g., an
 	  - do make sure you have an identifier for each *potential* UDI/UDP that you use.
 	  
 ## Dry run
-By example
+
+
+By example, load Tapir
+```
+mamba activate tapir
+```
+(replace `mamba` with `conda` if you opted for a conda installation) <br>
+Try a dry run:
+
 ```
 snakemake -n  -s $TAPIR/snakemakes/bcl2bam.smk  -c16 --config Bcldir=250103_A01324_0120_BHWGY2DMXY Outdir=/eva/datums/cooked/NovaSeq001/2025/ Experiment=Example
 ```	

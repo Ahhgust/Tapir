@@ -105,7 +105,7 @@ alias 'll=ls -tlr'
 #the former is *needed* by sambamba/gatk
 ulimit -n 65768
 ulimit -s unlimited
-
+shopt -s direxpand # forcibly let's you tab-complete expressions with $ signs
 # and as alluded above, let's make sure that TAPIR is defined for future shell instances
 TAPIR=/mnt/disk0/Tapir
 export TAPIR

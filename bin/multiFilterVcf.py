@@ -3,6 +3,7 @@
 import os
 import sys
 import argparse
+import math
 
 VERSION=0.001
 EPSILON=0.0001
@@ -25,7 +26,9 @@ class AllPairs:
         self.i=0 # indexes
         self.j=0
         return self
-
+        
+    def __str__(self):
+        return str(self.i) + "-" + str(self.j)
         
     def __next__(self):
 
@@ -98,6 +101,7 @@ if __name__ == "__main__":
 
     allPairs = AllPairs(fLevels, iLevels)
 
+    sampleInfo=dict()
     
     sampleid=""
     for line in sys.stdin:
@@ -119,6 +123,7 @@ if __name__ == "__main__":
 
             for p in allPairs:
                 print("\t", p[-2] , "-" , p[-1], sep="", end="")
+                sampleInfo[ p ] = [ 0., 0 ]
             print()
             
         else:
@@ -183,12 +188,15 @@ if __name__ == "__main__":
 
                 if gp > gpFilt and bf > bfFilt:
                     print("\t", s[-1], sep="", end="")
+                    sampleInfo[ p ][1] += 1
+                    sampleInfo[ p ][0] += math.log(bf)                    
                 else:
                     print("\t./.", end="")
 
             print("")
             
-            
+for p in allPairs:
+    print(str(p[-2])+"-" +str(p[-1]), p[0], p[1], sampleInfo[p][0], sampleInfo[p][1], sep="\t", file=sys.stderr)  
     
         
     
