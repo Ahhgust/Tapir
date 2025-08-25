@@ -36,8 +36,9 @@ mamba activate tapir
 Try a dry run:
 
 ```
-snakemake -n  -s $TAPIR/snakemakes/bcl2bam.smk  -c16 --config Bcldir=250103_A01324_0120_BHWGY2DMXY Outdir=/eva/datums/cooked/NovaSeq001/2025/ Experiment=Example
-```	
+snakemake -n  -s $TAPIR/snakemakes/bcl2bam.smk  -c16 --config Bcldir=/eva/staging/Novaseq/Novaseq/Output/250103_A01324_0120_BHWGY2DMXY Samplesheet=./MySampleSheet.csv Experiment=WriteDataHere --configfile $TAPIR/configs/config_v_2_low_mem.yaml
+```
+
 In words: 
 - do a dry run (-n)
   - This means, just evaluate the information and tell me what things will be run.
@@ -48,9 +49,7 @@ In words:
   - Extract this BCL directory ( 250103_A01324_0120_BHWGY2DMXY )
   - You *want* to override the BCL directory.
 - The following overrides are *optional*
-  - Write the fastqs to this *base* directory (`/eva/datums/cooked/NovaSeq001/2025`)
-     - and within that base directory, to: *Example*
-	 - ie, to: `/eva/datums/cooked/NovaSeq001/2025/Example`
+  - Write the fastqs to `WriteDataHere/`
      - doing this will OVERWRITE the default `Experiment Name` used in the sample sheet
   -  You can also add (after the --config)
      - The path to a *different* sample sheet using `Samplesheet=ModifiedSampleSheet.csv`
@@ -65,9 +64,15 @@ If you are happy with the output, try running Tapir for real:
 Take whatever variant of the above command you used, and just remove the `-n`. Running in the background is probably helpful too:
 For example (modify the below to match the flags/additions you made from the above)
 ```
-nohup snakemake -s $TAPIR/snakemakes/bcl2bam.smk  -c16 --config Bcldir=250103_A01324_0120_BHWGY2DMXY Outdir=/eva/datums/cooked/NovaSeq001/2025/ Experiment=Example &> tapirOutput.oe &
+nohup snakemake -s -s $TAPIR/snakemakes/bcl2bam.smk  -c16 --config Bcldir=/eva/staging/Novaseq/Novaseq/Output/250103_A01324_0120_BHWGY2DMXY   &> tapirOutput.oe &
 ```	
 which removes the -n (not a dry run, but the real thing), and tells unix to write all of the output to `tapirOutput.oe`, to run this command in the background (final `&`), and even if I log out, let this program run (`nohup`).
 <br>
 If Tapir finishes quickly, check `tapirOutput.oe`. Odds are you specified some directory that you don't have permission to read/write to.
 Other than that, Tapir should run (perhaps for the next day or 3), depending on what it is you're doing.
+
+## Step2
+QC your run; Do you FASTQs make sense? Are there a lot of reads in a UDI read?
+It's very hard for your samplesheet to be right; most people do something wrong. If the results look suspect, you can delete the directories and run the workflow again.
+If you're happy with the results, do step 2. Step 2 is run once per sample.
+so `cd` into `Sample_Data` directory. 

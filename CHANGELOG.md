@@ -3,6 +3,9 @@
 ### Beta changes (post-publication)
 
 ### Alpha changes (pre-publication)
+# 8/26
+Bugfix; Newever versions of bcftools crashed when making genotypes.  -Ov9 changed to -Oz9 in genotyping. 
+	
 # 6/26/2025
 -  Updated bcf223andme.py:
 	-  -d this estimates the observed and expected heterozygosity (wrt to multiple population groups). Requires GNOMAD annotations

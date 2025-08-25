@@ -207,7 +207,7 @@ rule bcftools_genotype_a:
         """
         #"""
         #({params.binary} mpileup {params.mpileopt} --fasta-ref {params.ref} -T {params.panel} {input.bam} |\
-        #{params.binary} call -Am -P 0. -C alleles -T {params.panel} -Ov9 --threads {threads} -o {output}) 2> {log} &&\
+        #{params.binary} call -Am -P 0. -C alleles -T {params.panel} -Oz9 --threads {threads} -o {output}) 2> {log} &&\
         #{params.binary} index --threads {threads} {output} 2>> {log}
         #"""
 
@@ -226,7 +226,7 @@ rule combine_genotypes_xa:
         binary=bcftools
     shell:
         """
-        {params.binary} concat -Ov9 -o {output} {input.autos} {input.xchrom} 2> {log}
+        {params.binary} concat -Oz9 -o {output} {input.autos} {input.xchrom} 2> {log}
         {params.binary} index --threads {threads} {output} 2>> {log}
         """
 
@@ -363,7 +363,7 @@ rule bcftools_genotype_x:
         """
         ploidy=`cut -f4 {input.ploidy}`
         ({params.binary} mpileup {params.mpileopt} --fasta-ref {params.ref} -r chrX {input.bam} |\
-        {params.binary} call --ploidy $ploidy -Am -P 0. -C alleles -T {params.panel} -Ov9 --threads {threads} -o {output}) 2> {log} &&\
+        {params.binary} call --ploidy $ploidy -Am -P 0. -C alleles -T {params.panel} -Oz9 --threads {threads} -o {output}) 2> {log} &&\
         {params.binary} index --threads {config[bcftoolsParams][threads]} {output} 2>> {log}
         """
 
