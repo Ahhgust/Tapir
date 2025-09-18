@@ -20,8 +20,8 @@ In practice, Tapir simply runs a bunch of UNIX command in a particular order. By
 | samtools | flagstat | | |
 | GLIMPSE2 | phase/ligate | --mapq20 | Chunk sizes are set to twice the default. |
 | DeepVariant | | --model_type=WGS | Available in Tapir; makes VCFs/gVCFs only (no 23andme files) |
-| Demixtify  | |  | Estimates the mixture fraction using 586,670 autosomal SNPs from the GSA panel |
-| samstats.py* | | | Estimates the mean read depth (an estimate of coverage) using the GSA10K panel |
+| Demixtify  | |  | Estimates the mixture proportion and likelihoods for the single-source vs two person mixture hypothesis using 586,670 autosomal SNPs from the GSA panel. |
+| samstats.py* | | | Estimates the mean read depth (an estimate of coverage) and related statistics using the GSA10K panel |
 | bcf223andme.py** | | BCFtools input: -x -q 20 GLIMPSE input: -x -b 1.7 -p 0.99| Prefiltered with bcftools view -e "INFO/OriginalContig!=CHROM" And bcftools norm -m+ |
 *Custom software
 
@@ -31,10 +31,10 @@ A more complete set of flags are found in the config.yaml files (defaults to: $T
 
 ## Repeated measurements (merging runs)
 Tapir supports repeated measurements on a sample. <br>
-Tapir is also incredibly ornery about it. <br>
+Tapir is also incredibly particular about it. <br>
 Repeat after me: If you want merge repeated measurements, <br><br> **They must have the same sample name** <br><br>
 e.g.,
-It's not <br>
+In the `SampleSheet`, it's not <br>
 *Sample1_Replicate1* <br>
 and <br>
 *Sample1_Replicate2* <br>
@@ -42,29 +42,29 @@ But it is instead: <br>
 *Sample1*
 <br>
 <br>
-Now, if you never ever want to merge the two replicates, the naming above is fine. <br>
+Now, if you never ever want to merge the two replicates, the first set of naming above is fine. <br>
 <br>
 For the record, this isn't some rule that I made up; this rule is a byproduct of how `Read Groups` are used in genomics. See the *Read Groups* section below.
 <br>
-And for the record, if you wish to merge samples and have mis-named them, the easiest thing to do is just name them correctly (in the sample sheet) and rerun everything.
+And also for the record, if you wish to merge samples and have mis-named them, the easiest thing to do is just name them correctly (in the sample sheet) and rerun everything.
 That is heavy handed, but in fairness, that also makes more work for the computer to do (so really, who cares?).
 You can force Tapir to evaluate multiple bams (in the same sample directory) with different/incorrect sample information. Tapir just evaluates: <br>
 `*/Bams/Final_Bams/*la.md.bqsr.bam` <br>
 so with some creative symbolic linking, you can force it to merge multiple (disparate) files. <br>
-Choosing to do this is dangerous and largely untested; on paper, Glimpse should work, while BCFtools (genotyping) would require some changes. 
-More importantly, the results will be ( a little bit ) wrong if (and in principle, only if) you sequence the same library multiple times (and fail to specify the right sample identifier).
-Said more concretely, you would miss some PCR duplicates...
+Care must be taken, however; the read-group information must be constructed so as to reflect the right library and sample. <br>
+Know that GLIMPSE ignores read-group information (and always emits a single genotype in a single-sample VCF file), whereas BCFtools will generate multi-sample VCF (if that's what the read-groups describe); note that multi-sample VCFs will break Tapir.
+
 
 ### Forcibly merging samples within or between runs
-Tapir is very conservative in how it merges samples. The sample names need to be exactly the same; by construction, they also need to be run on different runs (otherwise we'd have the same name twice, which is a no-no when it comes to how we name files!)
-Note that this Tapir's fault; this is just how genomics works.
+Tapir is very conservative in how it merges samples. The sample names need to be exactly the same; by construction, they also need to be run on different flowcells (otherwise we'd have the same name twice, which is a no-no when it comes to how we name files!)
+Note that this is not Tapir's fault; this is just how genomics works.
 <br>
-Sometimes we need to merge runs across samples. For example, let's say we have two hairs: hair1 and hair2 are their sample names. We'd like to think they came from the same person, but maybe they didn't. If neither one gave us enough information to do genotyping, maybe both of their results together is enough!
+Sometimes we need to merge runs across samples. For example, let's say we have two hairs: `hair1` and `hair2`. We'd like to think they came from the same person, but maybe they didn't. If neither one gave us enough information to do genotyping, maybe both of their results together is enough!
 <br>
 Tapir provides *limited* support for doing such things. 
 Right now that support is limited to GLIMPSE (though the BCFtools mpileup command can be modified to accommodate this scenario too).
-Why is it limited, you say? Part of the issue is that the `Read Groups` information is wrong. That means that Tapir will naively merge the bams, but duplicates between but not within your two hair samples cannot be detected. That's okay in this case because they involve separate library preps, so there are no (real) cases of this happening.
-In truth, when we merge BAMs that have different sample ids, we're creating a multi-sample BAM file. So if we do traditional genotyping on that, you'd get a VCF file for two individuals out (with BCFtools).
+Why is it limited, you say? Part of the issue is that the `Read Groups` information is wrong. That means that Tapir will naively merge the bams, but duplicates between but not within your two hair samples cannot be detected. That's okay in the hair case above because they involve separate library preps, so there are no (real) cases of this happening.
+In truth, when we merge BAMs that have different sample ids, we're creating a multi-sample BAM file. So if we do traditional genotyping on that, you'd get a VCF file for two individuals (with BCFtools).
 As it stands, GLIMPSE assumes that we're working with a single-sample file, which is convenient because that's what we want to treat the data as.
 A more correct solution is to rewrite the read groups to have the "correct" sample identifier (hair1hair2?), but the result is the same either way.
 <br>
@@ -83,7 +83,7 @@ cd Merged
 snakemake -c 128 -s $TAPIR/snakemakes/bams2genotypes.smk  --until call_glimpse2"
 ```
 
-this will run Glimpse on the merge/remark-duplicate result. Note that if you are not careful with your read-groups, the BCFtools genotyping will be wrong, as it supports multisample genotyping (and Tapir is built for single-sample genotyping)
+this will run Glimpse on the merge/remark-duplicate result. To reiterate (as described above), if you are not careful with your read-groups, the BCFtools genotyping will be wrong; stick with GLIMPSE.
 
 
 ## Custom Configurations
@@ -110,7 +110,7 @@ Tapir writes (many) temporary files to local storage devices. In short, if you h
 `/tmpdirprefix: "/tmp"` <br>
 in the config file(s). 
 <br>
-Better yet, set `/tmp` to the mount location...
+Better yet, set `/tmp` to the mount location of the NVMe drive...
 <br>
 
 ### Multithreading
@@ -125,9 +125,9 @@ Tapir embeds read-group information when BWA-mem is invoked. Only one parameter,
 By default, Tapir uses the `"I7_Index_ID"` in the sample sheet and treats that as the identifier. This parameter can be changed in the `config.yaml` file used by Tapir.
 <br>
 Why does this matter? It mostly doesn't, however, if you are merging multiple BAMs, PCR duplicates can occur both within and between BAMs; 
-specifically, if you take the same library and sequence it twice, the LB code should set to be the *same*. If instead you sequence the same sample
+specifically, if you take the same library and sequence it twice, the LB code (part of the read group) should set to be the *same*. If instead you sequence the same sample
 using two different library preps, `LB` (within subjects) should be different. Using the `i7_Index_ID` is safe for the first scenario (same library sequenced twice), but it may or may not be true of the second.
-That said, the consequences of calling two different libraries the "same" library are pretty minimal; you might artificially call a few more duplicate reads... but that's a pretty minor issue. 
+That said, the consequences of calling two different libraries the "same" library are pretty minimal; you might artificially call a few more duplicate reads, but the probability of that happening is miniscule, and the result is that your coverage might be a touch smaller than what it would be otherwise.
 If you want, however, you can include some column in the sample sheet and dedicate it to `LB`; simply modify your config file accordingly!
 <br>
 Just for utter clarity, Tapir creates (and otherwise assumes) that all BAM files are single-sample (no multisample BAM files are permitted).
@@ -139,7 +139,7 @@ the config file assumes one of three kind of paths when referring to some file:
    -  In this case, the binary is assumed to come from the user environment
    -  In the samtools example, samtools is assumed to be in your PATH.
 -  an absolute directory
-   -  e.g., binary: "/foo/bar/myfile.py"
+   -  e.g., binary: "/absolute/path/of/myfile.py"
    -  the same as above
 -  a relative directory
    -  e.g., binary: "bin/sambamba"
@@ -160,7 +160,7 @@ Tapir has quite a few tools present that aren't actively used; they may be incor
 ## DeepVariant
 Tapir also comes prepackaged with DeepVariant (`src/DeepVariant/deepvariant_latest.sif`). You can invoke it by:
 `snakemake -c 128 -s src/bams2genotypes.smk --until call_deepvariant`
-Note Tapir doesn't officially support DeepVariant; if the above doesn't work, so be it. You will need singularity to be installed however.
+Tapir provides minimal support DeepVariant; singularity must be installed (there are various tutorials on how to do so; none are provided here). Note that *variant calling* (in short, describe all of the places in the genome that look different from the reference sequence) is not the same thing as *genotyping* (in short, given these sites and alleles, what are the corresponding genotype likelihoods?). For most forensic applications, we want to **genotype** samples; not variant call them.
 
 
 
