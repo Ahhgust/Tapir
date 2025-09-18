@@ -98,7 +98,7 @@ Note that the two configs only differ at a single line; the difference (`diff`) 
 186c186
 <     glimpse2: "-x -b 1.7 -p 0.99" # (bcf223andme.py) filters for glimpse2; Include the X; Bayes Factor > 1.7; Genotype Posterior > 0.99
 ---
->     glimpse2: "-x -b 1.7 -p 0.95" # CHANGED HERE (from standard)(bcf223andme.py) filters for glimpse2; Include the X; Bayes Factor > 1.7; Genotype Posterior > 0.95
+>     glimpse2: "-x -b 200 -p 0.5" # CHANGED HERE (from standard)(bcf223andme.py) filters for glimpse2; Include the X; Bayes Factor > 200; Genotype Posterior > 0.5
 
 ```
 ie, one use a minimum posterior probability of 0.99; ultralow drops that to 0.95 (increasing both the call-rate and the error rate, which you might have to do if you're below the minimum call rate)
