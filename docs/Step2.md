@@ -16,13 +16,14 @@ In words:
 	     - left-align (indel realignment)
 		 - mark-duplicates (pcr/optical duplicates marked)
 		 - bqsr (base-quality scores have been empirically recalibrated)
--  Internally, we found that:
+-  You might found that:
    -  at least 0.10× Coverage is needed
       - for Glimpse (imputation)
    -  and 5-10× Coverage is needed
       -  for BCFtools (maximum likelihood; no imputation)
 -   Likewise, mixture fractions <10% (idealing <1%) are highly recommended
-   
+-   **The above thresholds should be vetted internally and modified as needed.**
+
 In **Step 2** you select *one* of the *n* samples		 
 -  You've completed **Step 1**
    - Checked the [QC](QC.md)
@@ -31,7 +32,7 @@ In **Step 2** you select *one* of the *n* samples
 
 ## The flow
 Within a biological sample (with *m* libraries)
--  Composed of *m* measurments (bams)
+-  Composed of *m* measurements (bams)
    -  bams are merged (GATK)
       -  per-bam read-group information ensures a correct merger. [Click here](PowerUsers.md) for an explanation.
    -  duplicates are re-marked
@@ -39,7 +40,7 @@ Within a biological sample (with *m* libraries)
    -  Tapir optimizes the common case (m=1)
       - symbolic links when only 1 bam file is available; no merging, no PCR duplicate remarking.
 -  Autosomal genotyping is performed using
-   -  BCFtools OR
+   -  BCFtools (AND/)OR
    -  GLIMPSE
       -  Which tool depends on the user
 -  The ploidy of the X chromosome (X vs XX hypothesis) is estimated
@@ -92,7 +93,7 @@ on a commodity computer as:
 snakemake -n -c 3 -s $TAPIR/snakemakes/bams2genotypes.smk --configfile $TAPIR/configs/config_v_2_low_mem.yaml 
 ```
 (and remove the -n if the above looks right).
-By default, Tapir runs GLIMPSE and BCFtools. BCFtools has limited applicability in low-throughput settings. You can save yourself some time by only running GLIMPSE:
+By default, Tapir runs both GLIMPSE and BCFtools. In my experience, BCFtools has limited applicability in low-throughput settings. Said plainly, it's hard to get a 5-10x genome out of a challenged sample. That said, what is "enough" data depends a lot on the question asked. You can save yourself some time by only running GLIMPSE:
 
 
 ```
@@ -104,9 +105,10 @@ snakemake -n -c 3 -s $TAPIR/snakemakes/bams2genotypes.smk --configfile $TAPIR/co
 Only using 3 cores is very limiting; GLIMPSE is memory intensive, however. 3 works on my laptop, but consider ramping this value up if you have more memory.
 ## Genotyping everything
 
-Sometimes it's useful to run *every* sample through step 2 (validation study, ayeone?) <br>
+Sometimes it's useful to run *every* sample through step 2 (validation study, anyone?) <br>
 
-From the `Sample_Data` directory, you can do the following:
+From the `Sample_Data` (sub)directory, you can do the following:
+
 ```
 for dir in `ls -d1 */ | egrep -v 'Undetermined|Offtargets|gtcommands'`;
 do
@@ -122,4 +124,4 @@ You can genotype all samples in parallel using:
 parallel -j 10 < gtcommands &> gtcommands.outerr &
 ```
 
-This will genotype up to 10 samples at a time, using no more than 10 (`-j 10`) x 16 (`-c 16`)=160 CPUs, which is fine for a moderately provisioned server (maybe 60+ CPUs?). On my laptop I'd use `-c 3` and `-j 1`, as that's a bit bareboned. Please pick a value that's appropriate for your system (noting that not all parts of the genotyping module support multi-processing (though snakemake will multitask things, so you get some multicore support). IE, its faster to do 10 x 16 than it is to do 1 x 160 ).
+This will genotype up to 10 samples at a time, using no more than 10 (`-j 10`) x 16 (`-c 16`)=160 CPUs, which is fine for a moderately provisioned server (maybe 60+ CPUs?). On my laptop I'd use `-c 3` and `-j 1`, as that's a bit bareboned. Please pick a value that's appropriate for your system (noting that not all parts of the genotyping module support multi-processing, though snakemake will multitask things, so you get some multicore support). IE, its faster to do 10 x 16 than it is to do 1 x 160 ).

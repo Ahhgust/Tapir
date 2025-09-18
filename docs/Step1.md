@@ -8,7 +8,7 @@ Items in teal are for *user-interpretation*. Items in dark blue are programs and
 
 ## The flow
 In words:
--  Raw BCL data (Illumina sequencer) are demultiplex (converted to fastq) by
+-  Raw BCL data (Illumina sequencer) are demultiplexed (converted to fastq) by
    -  bcl2fastq (MiSeq, NovaSeq, HiSeq...) **OR**
    -  bcl-convert (NextSeq, ...)
       -  Which is chosen depends on the format of the SampleSheet.
@@ -27,7 +27,7 @@ In words:
    -  Fastqc is run
       -  And its report is created
 -  Base quality scores are empirically recalibrated (BQSR)
-   -  The results are tabulated/plottted (plot_bqsr)
+   -  The results are tabulated/plotted (plot_bqsr)
    -  And the same is tested to see if it is a mixture (Demixtify)
       -  Which generates both a detailed report (.demix) AND
       -  a summary
@@ -72,11 +72,11 @@ Parameters (ie, things that start with a "-") of note:
    - Optional 
       - Samplesheet=
          -  Provide a path (and filename) for a different sample sheet.
-	    -  This can be useful if you messed up the sample sheet the first time.
+	    -  This can be useful if you used the wrong sample sheet the first time.
 	 -  By default, SampleSheet.csv (in the BCL dir) is used.
 
 
-The dry-run will also parse the provided sample sheet; there are a lot of ways to mess up a sample sheet! Please see the writeup:
+The dry-run will also parse the provided sample sheet. Sample sheets have a very strict format, and there are many ways to make a mistake! Please see the writeup:
 <br>
 ![here](../examples/sample_sheets/README.md) for a reminder of how what the sample sheet *should* look like.
 <br>
@@ -103,7 +103,7 @@ As well, run-level metrics are of key importance.
 
 ## How to (FASTQ)
 
-BCL is much preferred over FASTQ. In short, how FASTQs are extracted matters, and the defaults provided by Illumina are not so great (for challenged samples). <br>
+BCL is much preferred over FASTQ. In short, how FASTQs are extracted matters, and the defaults provided by Illumina are far from ideal (especially for challenged samples). <br>
 (Tapir doesn't use the defaults, I would add). <br>
 However, if you insist on using Fastqs, you can do so a la<br><br>
 
@@ -116,7 +116,7 @@ Step 1 of Tapir also supports Fastq. Note the FASTQs need to have been generated
 <br>
 It does so by acting as if bcl-convert (or bcl2fastq) was already run on.
 <br>
-For example, let's make a directory called `Lowpass` that has the goodies in it.
+For example, let's make a directory called `Lowpass` that has all of our data in it.
 ```
 mkdir Lowpass
 cd Lowpass
@@ -150,5 +150,5 @@ In general, the directory structure looks like:
 
 ## TMI
 Snakemake workflows are typically implemented without arguments (ie, things that change how the programs are run). Tapir does not entirely adhere to this philosophy, and it provides meta information so that how the workflow was run can be easily tracked. 
-Specifically, in Step 1, a traditional Snakemake workflow would write to the BCL directory (to preserve state). That is a bad idea; the original data should be treated as a WORM (write once, read many times); that way it can be easily backed up as soon as it comes off the instrument (and MD5s and whatnot will match).
+Specifically, in Step 1, a traditional Snakemake workflow would write to the BCL directory (to preserve state). Writing to the BCL directory is strongly discouraged; the original data should be treated as a WORM (write once, read many times); that way it can be easily backed up as soon as it comes off the instrument (and MD5s and whatnot will match).
 
