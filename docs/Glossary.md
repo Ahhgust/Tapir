@@ -70,7 +70,7 @@ In short you could use the following algorithm: if the allele is rare, call the 
 The resulting profile will be accurate (with respect to any individual), and *very* matchy (because most everyone has that profile and the genotypes in the profile are accurate). 
 However such markers will have BF<1. It should be noted that the BF described is *a* Bayes factor; not *the* Bayes factor.
 <br>
-It should be noted that by default, we empose a minimum BF of least 1.7 (for higher quality samples; much higher for lower quality samples). So while the above is *true*, these effects are mitigated by using a BF>1.
+It should be noted that by default, we impose a minimum BF of least 1.7 (for higher quality samples; much higher for lower quality samples). So while the above is *true*, these effects are mitigated by using a BF>1.
 
 - **Breadth (of coverage)**. The fraction of the genome that has at least a given number of reads. E.g., Breadth (5×) is the fraction of the genome that has at least 5 reads. See also, Depth, Coverage; estimated using the same sites used to estimate Coverage.
 
