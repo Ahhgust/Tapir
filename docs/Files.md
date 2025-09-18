@@ -81,7 +81,7 @@ Tapir (by default) retains all FASTQs. It also extracts your indexes (necessary 
 The "index" fastqs have `_I1_` or `_I2_` in their file name, while the read data have `_R1_` or `_R2_` 
 The *size* of the fastqs can be a rough indicator of performance. <br>
 In particular, FASTQs from the unclaimed indexes (typically UDI/UDP as a prefix) can be diagnostic--
- if these files are very large, you likely have an error in your sample sheet (or worse; contamination).
+ if these files are very large, you likely have an error in your sample sheet (or worse; contamination, in particular contamination from some other run).
 
 ## Sample Summaries
 From step 1 of Tapir. <br>
@@ -195,7 +195,7 @@ It estimates the following summary statistics:
 -	ReadLength
 	-	How long is the read. (IMO, the tlen field is much more meaningful)
 -	Nsites
-	-	Trivial; how many sites do we consider. By default, 10,0000
+	-	Trivial; how many sites do we consider. By default, 10,000
 	-	Associated Index is always 0 (can be ignored).
 
 For each summary statistic, Samstats reports the exact distribution (marginally; for each summary ignoring the others).<br>

@@ -7,9 +7,9 @@ Sample sheets are by *far* the easiest place to make a mistake.
 A dry-run (`-n` when you run snakemake) will (amongst other things) parse the sample sheet. If you made a mistake, now is your time to fix it.
 Common mistakes:
 - bad sample names
-  -  Illumina forces us to use numbers, letters and - in sample names. **that's it**
+  -  Illumina has strict rules on naming. Only use numbers, letters and - in sample names. **that's it**
      - so **no** periods (`0.5ng`)
-	 - underscores (`foo_bar`) 
+	 - underscores (`bad_name`) 
 	 - or spaces (`sample 5`)
 	   - honestly, just don't use spaces ever. It's a unix no-no.
   -  Sample names also cannot start with UD
@@ -23,7 +23,7 @@ Common mistakes:
 
 <br>
 In addition, remember you can specify a modified SampleSheet when you run `bcl2bam`
-add (`--config Samplesheet=mySampleSheet.csv`) to your command line.
+add (`--config Samplesheet=mySampleSheet.csv`) to your command line. (the other option is to overwrite the original sample sheet; do be careful with this option as the SampleSheet is often located in BCL directory; a directory best-kept as write-once, and only once.
 
 ## Restarting a run and/or incomplete runs
 If a run gets killed (did you accidentally close Virtual Box?), you can have snakemake pick up where it left off with:

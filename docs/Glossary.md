@@ -14,11 +14,11 @@
 - **fastq**. FASTA ([Wikipedia article](https://en.wikipedia.org/wiki/FASTA_format)) with Quality. 
 A MPS read (DNA sequence) with corresponding base qualities. Often compressed with gzip (as .fastq.gz or fq.gz). See [Wikipedia article](https://en.wikipedia.org/wiki/FASTQ_format)
 
-- **sam**. an uncompressed version of the bam file format. Good people never store data in sam format.
+- **sam**. an uncompressed version of the bam file format. BAM files are large; SAM files are far larger. It is poor practice to keep a file in the `.sam` format.
 
 - **vcf**. Variant call format; often (block) compressed as vcf.gz or bcf. A file format commonly used to describe SNVs. See [Wikipedia article](https://en.wikipedia.org/wiki/Variant_Call_Format).
 
-- **23andMe**. A file format used by *23andMe*, apparently when you download your "raw" data (by which they mean genotypes) this is the format. The format is loosely described [here](http://fileformats.archiveteam.org/wiki/23andMe). Note that Tapir does not add RS numbers. I sincerely hope that doesn't matter (mainly because it shouldn't).
+- **23andMe**. A file format used by *23andMe*, apparently when you download your "raw" data (by which they mean genotypes) this is the format. The format is loosely described [here](http://fileformats.archiveteam.org/wiki/23andMe). Note that Tapir does not add RS numbers. Note that RS numbers, despite what they are defined as, are not (entirely) stable identifiers.
 
 ## List of tools
 ### Off the shelf tools:
@@ -69,6 +69,8 @@ Diabolically, in the complete absence of data one can still accurately infer gen
 In short you could use the following algorithm: if the allele is rare, call the genotype homozygous major (often homozygous reference); for other SNPs, simply drop them.
 The resulting profile will be accurate (with respect to any individual), and *very* matchy (because most everyone has that profile and the genotypes in the profile are accurate). 
 However such markers will have BF<1. It should be noted that the BF described is *a* Bayes factor; not *the* Bayes factor.
+<br>
+It should be noted that by default, we empose a minimum BF of least 1.7 (for higher quality samples; much higher for lower quality samples). So while the above is *true*, these effects are mitigated by using a BF>1.
 
 - **Breadth (of coverage)**. The fraction of the genome that has at least a given number of reads. E.g., Breadth (5×) is the fraction of the genome that has at least 5 reads. See also, Depth, Coverage; estimated using the same sites used to estimate Coverage.
 
@@ -77,7 +79,7 @@ However such markers will have BF<1. It should be noted that the BF described is
 - **Coverage**. How many times (on average) do we measure sites? Denoted as "×" (as in *times*), for example: 5.2×. 
 Coverage is often a misused term; we mean it to be the "redundancy of coverage" of Lander and Waterman [link to original paper](https://doi.org/10.1016/0888-7543(88)90007-9). 
 Note that Lander and Waterman's equation to estimate coverage does NOT apply well to shotgun WGS. In practice, we define coverage as the **mean read depth**. We estimate at 10k autosomal sites selected from Illumina's GSA panel. 
-If you want to be formal about things, you can think of coverage (C, that think you want to estimate) and your estimate of coverage $\hat{\Cmath}$, which is provided by Tapir.
+If you want to be formal about things, you can think of coverage (C, that thing you want to estimate) and your estimate of coverage $\hat{\Cmath}$, which is provided by Tapir.
 Only reads that pass QC are considered. Before your ask, yes, 10k is actually a very large sample size to estimate a mean.
 
 - **Depth**. At a site, how many times was it measured? Only reads that pass QC are considered. If reads are selected at random from a person's genome, per Lander and Waterman, Depth is Poisson distributed with lambda=Coverage.
@@ -105,7 +107,7 @@ The probability that the given genotype call is right (assuming a flat prior). E
 
 - **Pre-Phasing (of Illumina Sequencing)**. See Phasing. Instead, the percentage of clusters for which the sequencing jumps ahead.
 
-- **Quality**. Quality is commonly used to describe a base call (in a read, how likely is to be called correctly?), an alignment (ostensibly, what is the probability that the read is correctly mapped. Note that this *is not* what mapping quality really is), and a genotype (the likelihood associated with a proposed genotype; often given as a likelihood ratio). Quality is often encoded on a Phred scale [External link](https://en.wikipedia.org/wiki/Phred_quality_score). In most cases, large(r) quality is desired (ie, bigger is better). Notable exceptions include the PL tag in the VCF file format (bigger is... worse?).
+- **Quality**. Quality is commonly used to describe a base call (in a read, how likely is to be called correctly?), an alignment (ostensibly, what is the probability that the read is correctly mapped. Note that this *is not* what mapping quality really is), and a genotype (the likelihood associated with a proposed genotype; often given as a likelihood ratio). Quality is often encoded on a Phred scale [External link](https://en.wikipedia.org/wiki/Phred_quality_score). In most cases, large(r) quality is desired (ie, bigger is better). Notable exceptions include the PL tag in the VCF file format (bigger is... confusingly... worse).
 
 - **Read**. The raw sequence data produced by a sequencing instrument, generated as a result of detection of the sequence of nucleotides in a DNA strand and the translation of that information into digital sequence data.
 
