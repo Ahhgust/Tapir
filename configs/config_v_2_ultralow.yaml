@@ -1,5 +1,7 @@
-Version: "v.21"
+Version: "v.22"
 # Changelog:
+# 10/2025
+# added BAM filtering (samtools view)
 # 09/2024
 # Added X chromosome support (glimpse and bcftools)
 # includes estimating X ploidy, then genotyping wrt to that ploidy
@@ -52,6 +54,12 @@ Samplename: ""
 # (Not using BQSR doesn't make a lot of sense though)
 Suffix: "la.md.bqsr"
 
+# Treatments to the FINAL bam file. At a minimum, merged, and duplicate reads re-marked
+Treatment: "merged.md"
+# also supported: .merged.md.sfilt 
+# which uses a samtools view {filter} ... taking {filter} from: samtoolsParams : filter 
+
+
 # performance enhancement; write temporary files to local disk (ideally, NVME drives)
 # the current systems mount an entire drive to /tmp
 tmpdirprefix: "/tmp" # this is a prefix. for example: (mktemp -d --tmpdir={tmpdir} XXXXXXglimpse2)
@@ -96,6 +104,7 @@ samtoolsParams:
     binary: "samtools"
     sortMem: "50G"
     samtoolsThreads: 4
+    filter: "-e 'sclen/qlen<0.20'" # used to filter bams; Note the use of single quotes!!
     mem_mb_sort: 200000 # sort SORT alone; 50Gb * 4 threads
 
 sambambaParams:

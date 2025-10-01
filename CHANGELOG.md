@@ -3,7 +3,11 @@
 ### Beta changes (post-publication)
 
 ### Alpha changes (pre-publication)
-# 8/26
+# 10/1/2025
+Feature: hard filtering (through samtools view) is supported.
+Applies to the final bam (bams2genotypes).	
+Set '--config Treatment==merged.md.sfilt' (samtools filtering; see the samtoolsParams/filter entry)
+# 8/26/2025
 Bugfix; Newever versions of bcftools crashed when making genotypes.  -Ov9 changed to -Oz9 in genotyping. 
 	
 # 6/26/2025

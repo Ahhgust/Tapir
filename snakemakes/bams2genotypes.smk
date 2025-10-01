@@ -48,13 +48,15 @@ sampleName=config["Samplename"]
 # (Not using BQSR doesn't make a lot of sense though)
 suffix=config["Suffix"]
 
+treatment=config["Treatment"]
+
+
+
 # be default, it assumes you're in the directory of some sample within some experiment
 # in which case, the samplename is the name of the directory
 if sampleName=="":
     sampleName=os.path.basename( os.getcwd() )
 
-# left-aligned, mark duplicates, then base quality score recalibration...
-suffix="la.md.bqsr"
 
   
 bams=glob.glob(f"*/Bams/*{suffix}.bam")
@@ -69,14 +71,14 @@ def bamGenerator(wildcards):
     Convenience function; lists all of the final merged/markdup bams needed
     """
     # the BAM itself
-    bams = expand("{samplename}.{suffix}.merged.md.bam", samplename=sampleName, suffix=suffix)
+    bams = expand("{samplename}.{suffix}.{treat}.bam", samplename=sampleName, suffix=suffix, treat=treatment)
     # additional summaries of the BAM file
     bams.extend( \
-        expand("Final_Reports/{samplename}.{suffix}.merged.md.demix.summary", samplename=sampleName, suffix=suffix) )
+        expand("Final_Reports/{samplename}.{suffix}.{treat}.demix.summary", samplename=sampleName, suffix=suffix, treat=treatment) )
     bams.extend( \
-        expand("Final_Reports/{samplename}.{suffix}.merged.md.samstats.cov", samplename=sampleName, suffix=suffix) )
+        expand("Final_Reports/{samplename}.{suffix}.{treat}.samstats.cov", samplename=sampleName, suffix=suffix, treat=treatment) )
     bams.extend( \   
-         expand("Final_Reports/{samplename}.{suffix}.merged.md.flagstat", samplename=sampleName, suffix=suffix) )
+         expand("Final_Reports/{samplename}.{suffix}.{treat}.flagstat", samplename=sampleName, suffix=suffix, treat=treatment) )
     return bams
 
 
@@ -98,29 +100,30 @@ print("Path: ", ROOT)
 
 
 wildcard_constraints:
-    suffix=suffix
+    suffix=suffix,
+    treat=treatment
 
 # equivalent to call_glimpse2 and call_bcftools
 rule call_glimpse2_and_bcftools:
     input:
         bamGenerator,
-        expand("Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.{outtype}.tsv.gz", samplename=sampleName, suffix=suffix, caller=['glimpse2', 'bcftools'], outtype=["23andme", "23andme.snps"])
+        expand("Uploads/{caller}/{samplename}.{suffix}.{treat}.{caller}.hg19.{outtype}.tsv.gz", samplename=sampleName, suffix=suffix, treat=treatment, caller=['glimpse2', 'bcftools'], outtype=["23andme", "23andme.snps"])
 
 rule call_glimpse2:
     input:
         bamGenerator,
-        expand("Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.{outtype}.tsv.gz", samplename=sampleName, suffix=suffix, caller=['glimpse2'], outtype=["23andme", "23andme.snps"])
+        expand("Uploads/{caller}/{samplename}.{suffix}.{treat}.{caller}.hg19.{outtype}.tsv.gz", samplename=sampleName, suffix=suffix, treat=treatment, caller=['glimpse2'], outtype=["23andme", "23andme.snps"])
 
 rule call_bcftools:
     input:
         bamGenerator,
-        expand("Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.{outtype}.tsv.gz", samplename=sampleName, suffix=suffix, caller=['bcftools'], outtype=["23andme", "23andme.snps"])
+        expand("Uploads/{caller}/{samplename}.{suffix}.{treat}.{caller}.hg19.{outtype}.tsv.gz", samplename=sampleName, suffix=suffix, treat=treatment, caller=['bcftools'], outtype=["23andme", "23andme.snps"])
 
 # Note; does not create 23andme files...
 rule call_deepvariant:
     input:
         bamGenerator,
-        expand("VCFs/deepvariant/{samplename}.{suffix}.deepvariant.vcf.gz", samplename=sampleName, suffix=suffix)
+        expand("VCFs/deepvariant/{samplename}.{suffix}.{treat}.deepvariant.vcf.gz", samplename=sampleName, suffix=suffix, treat=treatment)
         
 rule call_all:
     input:
@@ -151,6 +154,7 @@ rule merge_bams:
             shell("ln -s {input} {output} &> {log}")
 
 
+
 # takes in a merged file (merge_bams) and marks duplicates
 # note that this happens w/in a sample, within a library (LB tag in the bam file)
 # optimized for the common case (the merged file is a symlink; aka, it comes from a single sample/library/run, 
@@ -173,16 +177,37 @@ rule remark_duplicates:
             shell("ln -sL `readlink {input}` {output.bam} &> {log} && ln -sL `readlink {input}`.bai {output.bai} &>> {log}")
         else:
             shell("{params.binary} markdup  --tmpdir={params.tmpprefix} -l 9 -t {threads} {input} {output.bam} &> {log}")
-
+      
+# optional bam filtering.
+# by default, envokes samtools view -e (though other flags/options may be used)
+# requires a relatively modern samtools to work (works on 1.13 and higher; may work on older versions too?)
+rule filter_bam:
+    input:
+        bam="{samplename}.{suffix}.merged.md.bam"
+    output:
+        bam="{samplename}.{suffix}.merged.md.sfilt.bam"
+    log:
+        "Logs/{samplename}.{suffix}.merged.md.sfilt.log"
+    threads: 
+        config["samtoolsParams"]["samtoolsThreads"]
+    params:
+        binary=GX.getParam("samtools", "binary"),
+        filt=config["samtoolsParams"]["filter"]
+    shell:
+        """
+        {params.binary} view -@ {threads} {params.filt} -b -o {output.bam} {input.bam} &> {log}
+        {params.binary} index -@ {threads} {output.bam} &>> {log}
+        """
+        
 # calls genotypes using bcftools.
 # only weakly parallelized ; supports per-chromosome level parallelism
 rule bcftools_genotype_a:
     input:
-        bam="{samplename}.{suffix}.merged.md.bam"
+        bam="{samplename}.{suffix}.{treat}.bam"
     output:
-        "VCFs/bcftools/{samplename}.{suffix}.autos.bcftools.vcf.gz"
+        "VCFs/bcftools/{samplename}.{suffix}.{treat}.autos.bcftools.vcf.gz"
     log:
-        "Logs/{samplename}.{suffix}.autos.bcftools.log"
+        "Logs/{samplename}.{suffix}.{treat}.autos.bcftools.log"
     threads: 
         config["bcftoolsParams"]["callthreads"]
     params:
@@ -214,12 +239,12 @@ rule bcftools_genotype_a:
 
 rule combine_genotypes_xa:
     input:
-        autos="VCFs/{caller}/{samplename}.{suffix}.autos.{caller}.vcf.gz",
-        xchrom="VCFs/{caller}/{samplename}.{suffix}.chrX.{caller}.vcf.gz"
+        autos="VCFs/{caller}/{samplename}.{suffix}.{treat}.autos.{caller}.vcf.gz",
+        xchrom="VCFs/{caller}/{samplename}.{suffix}.{treat}.chrX.{caller}.vcf.gz"
     output:
-        "VCFs/{caller}/{samplename}.{suffix}.{caller}.vcf.gz"
+        "VCFs/{caller}/{samplename}.{suffix}.{treat}.{caller}.vcf.gz"
     log:
-        "Logs/{samplename}.{suffix}.{caller}.log"
+        "Logs/{samplename}.{suffix}.{treat}.{caller}.log"
     threads: 
         config["bcftoolsParams"]["threads"]
     params:
@@ -232,12 +257,12 @@ rule combine_genotypes_xa:
 
 rule glimpse2:
     input: 
-        bam="{samplename}.{suffix}.merged.md.bam",
+        bam="{samplename}.{suffix}.{treat}.bam",
     output:
-        "VCFs/glimpse2/{samplename}.{suffix}.autos.glimpse2.vcf.gz"
+        "VCFs/glimpse2/{samplename}.{suffix}.{treat}.autos.glimpse2.vcf.gz"
     log:
-        phase="Logs/{samplename}.{suffix}.autos.glimpsephase.log",
-        ligate="Logs/{samplename}.{suffix}.autos.glimpseligate.log"
+        phase="Logs/{samplename}.{suffix}.{treat}.autos.glimpsephase.log",
+        ligate="Logs/{samplename}.{suffix}.{treat}.autos.glimpseligate.log"
     threads:
         config["glimpse2Params"]["threads"]
     params:
@@ -273,14 +298,14 @@ rule glimpse2:
 
 rule glimpse2_x:
     input: 
-        bam="{samplename}.{suffix}.merged.md.bam",
-        xploidy="VCFs/{samplename}.{suffix}.xploidy.txt"
+        bam="{samplename}.{suffix}.{treat}.bam",
+        xploidy="VCFs/{samplename}.{suffix}.{treat}.xploidy.txt"
     output:
-        vcf="VCFs/glimpse2/{samplename}.{suffix}.chrX.glimpse2.vcf.gz",
-        samplefile="VCFs/glimpse2/{samplename}.{suffix}.chrX.samplesfile.tsv"
+        vcf="VCFs/glimpse2/{samplename}.{suffix}.{treat}.chrX.glimpse2.vcf.gz",
+        samplefile="VCFs/glimpse2/{samplename}.{suffix}.{treat}.chrX.samplesfile.tsv"
     log:
-        phase="Logs/{samplename}.{suffix}.chrX.glimpsephase.log",
-        ligate="Logs/{samplename}.{suffix}.chrX.glimpseligate.log"
+        phase="Logs/{samplename}.{suffix}.{treat}.chrX.glimpsephase.log",
+        ligate="Logs/{samplename}.{suffix}.{treat}.chrX.glimpseligate.log"
     threads:
         config["glimpse2Params"]["threads"]
     params:
@@ -318,11 +343,11 @@ rule glimpse2_x:
 
 rule get_x_ploidy:
     input: 
-        "{samplename}.{suffix}.merged.md.bam",
+        "{samplename}.{suffix}.{treat}.bam",
     output:
-        "VCFs/{samplename}.{suffix}.xploidy.txt"
+        "VCFs/{samplename}.{suffix}.{treat}.xploidy.txt"
     log:
-        "Logs/{samplename}.{suffix}.xploidy.txt"
+        "Logs/{samplename}.{suffix}.{treat}.xploidy.txt"
     params:
         samtoolsbinary=GX.getParam("samtools", "binary"),
         aregion=GX.getParam("sexchromosomeParams", "aregion"),
@@ -346,12 +371,12 @@ rule get_x_ploidy:
 # only weakly parallelized (but it's fast enough, so let's not bother)
 rule bcftools_genotype_x:
     input:
-        bam="{samplename}.{suffix}.merged.md.bam",
-        ploidy="VCFs/{samplename}.{suffix}.xploidy.txt"
+        bam="{samplename}.{suffix}.{treat}.bam",
+        ploidy="VCFs/{samplename}.{suffix}.{treat}.xploidy.txt"
     log:
-        "Logs/{samplename}.{suffix}.chrX.bcftools.log"
+        "Logs/{samplename}.{suffix}.{treat}.chrX.bcftools.log"
     output:
-        "VCFs/bcftools/{samplename}.{suffix}.chrX.bcftools.vcf.gz"
+        "VCFs/bcftools/{samplename}.{suffix}.{treat}.chrX.bcftools.vcf.gz"
     threads: 
         config["bcftoolsParams"]["threads"]
     params:
@@ -371,12 +396,12 @@ rule bcftools_genotype_x:
 # (what this does), but for now using Bayes factors appears to do well enough.
 rule generate_sharing:
     input:
-        "VCFs/glimpse2/{samplename}.{suffix}.glimpse2.vcf.gz"    
+        "VCFs/glimpse2/{samplename}.{suffix}.{treat}.glimpse2.vcf.gz"    
     output:
-        seg="VCFs/glimpse2/{samplename}.{suffix}.ibisseg.tsv.gz",
-        coef="VCFs/glimpse2/{samplename}.{suffix}.ibiscoef.tsv.gz",
+        seg="VCFs/glimpse2/{samplename}.{suffix}.{treat}.ibisseg.tsv.gz",
+        coef="VCFs/glimpse2/{samplename}.{suffix}.{treat}.ibiscoef.tsv.gz",
     log:
-        phase="Logs/{samplename}.{suffix}.matchiness.log"
+        phase="Logs/{samplename}.{suffix}.{treat}.matchiness.log"
     threads:
         config["matchinessParams"]["ibis_threads"]
     params:       
@@ -431,12 +456,12 @@ rule generate_sharing:
 # to recover sites that are homozygous reference. 
 rule deepvar:
     input:
-        "{samplename}.{suffix}.merged.md.bam"
+        "{samplename}.{suffix}.{treat}.bam"
     output:
-        vcf = "VCFs/deepvariant/{samplename}.{suffix}.deepvariant.vcf.gz",
-        gvcf = "VCFs/deepvariant/{samplename}.{suffix}.deepvariant.g.vcf.gz"
+        vcf = "VCFs/deepvariant/{samplename}.{suffix}.{treat}.deepvariant.vcf.gz",
+        gvcf = "VCFs/deepvariant/{samplename}.{suffix}.{treat}.deepvariant.g.vcf.gz"
     log:
-        "Logs/{samplename}.{suffix}.deepvariant.log"
+        "Logs/{samplename}.{suffix}.{treat}.deepvariant.log"
     threads: config["deepvarParams"]["dvthreads"]
     params:
         singularityimage=GX.getParam("deepvar", "image"),
@@ -472,17 +497,17 @@ rule deepvar:
     """
 rule liftover2hg19:
     input:
-        "VCFs/{caller}/{samplename}.{suffix}.{caller}.vcf.gz"
+        "VCFs/{caller}/{samplename}.{suffix}.{treat}.{caller}.vcf.gz"
     output:
-        vcf="VCFs/{caller}/{samplename}.{suffix}.{caller}.hg19.vcf.gz",
-        fail="VCFs/{caller}/{samplename}.{suffix}.{caller}.liftover_fail.vcf.gz"
+        vcf="VCFs/{caller}/{samplename}.{suffix}.{treat}.{caller}.hg19.vcf.gz",
+        fail="VCFs/{caller}/{samplename}.{suffix}.{treat}.{caller}.liftover_fail.vcf.gz"
     params:
         binary=GX.getBinary("gatk"),
         options=config["gatkParams"]["liftoverOptions"],
         hg19=GX.getResources("Hg19"),
         chain=GX.getParam("gatk", "liftoverChain")
     log:
-        "Logs/{samplename}.{suffix}.{caller}.liftover.log"
+        "Logs/{samplename}.{suffix}.{treat}.{caller}.liftover.log"
     shell:
         "{params.binary} --java-options {config[gatkParams][javaoptions]} LiftoverVcf {params.options} -C {params.chain} -I {input} -O {output.vcf} -R {params.hg19} --REJECT {output.fail} 2> {log}"
 
@@ -492,11 +517,11 @@ def getVcfFilters(wildcards):
 
 rule hg19_to_23andme:
     input:
-        "VCFs/{caller}/{samplename}.{suffix}.{caller}.hg19.vcf.gz"    
+        "VCFs/{caller}/{samplename}.{suffix}.{treat}.{caller}.hg19.vcf.gz"    
     output:
-        "Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.23andme.tsv.gz"
+        "Uploads/{caller}/{samplename}.{suffix}.{treat}.{caller}.hg19.23andme.tsv.gz"
     log:
-        "Logs/{samplename}.{suffix}.{caller}.23andme.log"
+        "Logs/{samplename}.{suffix}.{treat}.{caller}.23andme.log"
     params:
         bcftools=bcftools,
         binary=GX.getBinary("bcf223andme"),
@@ -513,14 +538,14 @@ rule hg19_to_23andme:
 # note, final reproducibility files are written here too.
 rule hg19_to_23andme_snps:
     input:
-        "VCFs/{caller}/{samplename}.{suffix}.{caller}.hg19.vcf.gz"    
+        "VCFs/{caller}/{samplename}.{suffix}.{treat}.{caller}.hg19.vcf.gz"    
     output:
-        snps="Uploads/{caller}/{samplename}.{suffix}.{caller}.hg19.23andme.snps.tsv.gz",
-        args="Final_Reports/args.{samplename}.{suffix}.{caller}.txt",
-        snpsum="Final_Reports/{samplename}.{suffix}.{caller}.hg19.23andme.snpsummary.tsv",
-        cfile="Final_Reports/config.{samplename}.{suffix}.{caller}.csv"       
+        snps="Uploads/{caller}/{samplename}.{suffix}.{treat}.{caller}.hg19.23andme.snps.tsv.gz",
+        args="Final_Reports/args.{samplename}.{suffix}.{treat}.{caller}.txt",
+        snpsum="Final_Reports/{samplename}.{suffix}.{treat}.{caller}.hg19.23andme.snpsummary.tsv",
+        cfile="Final_Reports/config.{samplename}.{suffix}.{treat}.{caller}.csv"       
     log:
-        "Logs/{samplename}.{suffix}.{caller}.23andme.snps.log"
+        "Logs/{samplename}.{suffix}.{treat}.{caller}.23andme.snps.log"
     params:
         bcftools=bcftools,
         binary=GX.getBinary("bcf223andme"),
@@ -550,11 +575,11 @@ rule hg19_to_23andme_snps:
 # Consider using modules in future releases...
 rule make_bam_samstats:
     input:
-        "{samplename}.{suffix}.merged.md.bam"
+        "{samplename}.{suffix}.{treat}.bam"
     output:
-        "Final_Reports/{samplename}.{suffix}.merged.md.samstats"
+        "Final_Reports/{samplename}.{suffix}.{treat}.samstats"
     log:
-        "Logs/{samplename}.{suffix}.merged.md.samstats.log"
+        "Logs/{samplename}.{suffix}.{treat}.samstats.log"
     params:
         binary=GX.getBinary("samstats"),
         panel=GX.getParam("samstats", "panel")
@@ -563,11 +588,11 @@ rule make_bam_samstats:
 
 rule make_bam_cov:
     input:
-        "Final_Reports/{samplename}.{suffix}.merged.md.samstats"
+        "Final_Reports/{samplename}.{suffix}.{treat}.samstats"
     output:
-        "Final_Reports/{samplename}.{suffix}.merged.md.samstats.cov"
+        "Final_Reports/{samplename}.{suffix}.{treat}.samstats.cov"
     log:
-        "Logs/{samplename}.{suffix}.merged.md.samstatscov.log"
+        "Logs/{samplename}.{suffix}.{treat}.samstatscov.log"
     params:
         binary=GX.getSummarizer("samstats")
     shell:
@@ -575,11 +600,11 @@ rule make_bam_cov:
 
 rule bam_estimate_mix:
     input:
-        "{samplename}.{suffix}.merged.md.bam"
+        "{samplename}.{suffix}.{treat}.bam"
     output:
-        "Final_Reports/{samplename}.{suffix}.merged.md.demix"
+        "Final_Reports/{samplename}.{suffix}.{treat}.demix"
     log:
-        "Logs/{samplename}.{suffix}.merged.md.mf.log"
+        "Logs/{samplename}.{suffix}.{treat}.mf.log"
     params:
         binary=GX.getBinary("demixtify"),
         panel=GX.getParam("demixtify", "panel")
@@ -590,11 +615,11 @@ rule bam_estimate_mix:
     
 rule mix_summary:
     input:
-        "Final_Reports/{samplename}.{suffix}.merged.md.demix"
+        "Final_Reports/{samplename}.{suffix}.{treat}.demix"
     output:
-        "Final_Reports/{samplename}.{suffix}.merged.md.demix.summary"
+        "Final_Reports/{samplename}.{suffix}.{treat}.demix.summary"
     log:
-        "Logs/{samplename}.{suffix}.merged.md.mf.summary.log"
+        "Logs/{samplename}.{suffix}.{treat}.mf.summary.log"
     params:
         binary=GX.getSummarizer("demixtify")
     shell:
@@ -602,15 +627,15 @@ rule mix_summary:
         
 rule make_bam_flagstats:
     input:
-        "{samplename}.{suffix}.merged.md.bam"
+        "{samplename}.{suffix}.{treat}.bam"
     output:
-        "Final_Reports/{samplename}.{suffix}.merged.md.flagstat"
+        "Final_Reports/{samplename}.{suffix}.{treat}.flagstat"
     threads: 
         config["samtoolsParams"]["samtoolsThreads"]
     params:
         binary=GX.getParam("samtools", "binary"),
     log:
-        "Logs/{samplename}.{suffix}.merged.md.flagstat.log"
+        "Logs/{samplename}.{suffix}.{treat}.flagstat.log"
     shell:
         "{params.binary} flagstat -@ {threads}  {input} > {output} 2> {log}"
         
