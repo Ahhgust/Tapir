@@ -2,8 +2,6 @@ import glob, os, sys, re, time, gzip
 import GenomixHelper
 
 VERSION=0.31
-# List of changes
-# Added support for the MiSeq (by changing the CopyComplete.txt dependency when extracting BCLs)
 # See CHANGELOG.md for all changes
 
 ROOT=os.path.abspath(  os.path.join(workflow.current_basedir, ".."))
@@ -549,6 +547,7 @@ rule bwa_mem_map:
         samtools_binary=samtools,
         bwa_binary=GX.getBinary("bwamem"),
         ref=hg38,
+        xtra=config["bwamemParams"]["xtra"],
         library=getLibrary 
     run:
         read1=input[0]
@@ -570,7 +569,7 @@ rule bwa_mem_map:
 			pu=$(echo $header | cut -d':' -f 3,4 --output-delimiter='_')
 			rg=$(echo "@RG\tID:$seqID"_"$id\tSM:$sm\tLB:{params.library}\tPL:ILLUMINA")
 			({params.bwa_binary} mem -R $(echo "@RG\\tID:$sm"_"$seqID"_"$id\\tSM:$sm\\tLB:{params.library}\\tPL:ILLUMINA\\tPU:$pu") \
-			-t {threads} \
+			-t {threads} {params.xtra} \
 			-M {params.ref} \
 			{read1} {read2} | \
 			{params.samtools_binary} sort -@ {config[samtoolsParams][samtoolsThreads]}  -m {config[samtoolsParams][sortMem]} - > {output.bam} ) 2> {log}

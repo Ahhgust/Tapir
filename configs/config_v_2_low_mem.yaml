@@ -1,7 +1,7 @@
 Version: "v.22"
 # Changelog:
 # 10/2025
-# added BAM filtering (samtools view)
+# added BAM filtering (samtools view) AND ability to add BWA mem parameters
 # 09/2024
 # Added X chromosome support (glimpse and bcftools)
 # includes estimating X ploidy, then genotyping wrt to that ploidy
@@ -99,6 +99,7 @@ bclconvertParams:
 
 bwamemParams:
     threads: 50
+    xtra: "" # additional arguments to BWA mem go here.
     binary: "bwa"
 
 samtoolsParams:

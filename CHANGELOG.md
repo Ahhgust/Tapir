@@ -3,6 +3,12 @@
 ### Beta changes (post-publication)
 
 ### Alpha changes (pre-publication)
+# 10/3/2025
+Feature: parameters can now be passed to BWA
+Applies to the final bam (bcl2bams).	
+See  [../configs/config_v_2_standard_degraded.yaml](Link to an example)
+	
+	
 # 10/1/2025
 Feature: hard filtering (through samtools view) is supported.
 Applies to the final bam (bams2genotypes).	

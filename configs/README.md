@@ -3,7 +3,7 @@ Many tools by Tapir take command line arguments; some of the arguments are speci
 Two configuration files are provided; the default (`config_v_2_standard.yaml`) and one that is more permissive in its genotyping (`config_v_2_ultralow.yaml`)
 ## Config format
 *Do not modify config files in place!*
-You'll want to make a new config file instead. It's not terribly easy to read th config files. I have (loosely) standardized the following:
+You'll want to make a new config file instead. It's not terribly easy to read config files. I have (loosely) standardized the following:
 -  *binary*
    - Refers to the executable file/script that is invoked
 -  *threads*
@@ -24,8 +24,16 @@ Note, many more tools are supported in the config that are (currently) used by T
 ## Modifying the config
 Make a copy of a config file and change it as you see fit. <br>
 Please reach out to me (august.woerner AT unthsc.edu) for help. <br>
-I've included one modified config file (`config_v_2_ultralow.yaml`), with a change in the second-to-last line. In it, we dropped the posterior probability from 0.99 to 0.95. <br>
-This lets us emit more sites (increasing call rate) at the expense of accuracy.
+Note: no config is optimal, though I do try and make them sensical. Use at your own risk <br>
+I've included several modified config files
+- `config_v_2_ultralow.yaml`
+   - Final GLIMPSE genotypes:  posterior probability from 0.99 to 0.50; Bayes Factor 100 <br>
+- `config_v_2_low_mem.yaml`
+   - Parameters adjusted to run on a machine with 16Gb of RAM
+- `config_v_2_standard_degraded.yaml`
+   - Sets alignment parameters from: doi.org/10.1002/ece3.7056 (-k 19 -r 2.5) (affects bcl2bams)
+   - Performs hard filtering (removes readS): samtools view -e 'sclen/qlen<0.20 && qlen > 39' (no more than 20% soft clipping; at least 40 bases aligned)
+
 
 ## Using a modified config
 Example, dry run (-n):
