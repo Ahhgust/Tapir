@@ -66,7 +66,9 @@ wget -O GMWOF5428715_S89_L001_R2_001.fastq.gz 'https://www.dropbox.com/s/qxa8p90
 Download the relevant files from Zenodo:
 ```
 # Imputation panel; this is big
-wget -O tapir_imputation.tar https://zenodo.org/records/14171544/files/tapir_imputation.tar?download=1 && tar -xf tapir_imputation.tar && rm tapir_imputation.tar
+wget -O tapir_imputation.tar https://zenodo.org/records/14171544/files/tapir_imputation.tar?download=1 
+md5sum tapir_imputation.tar
+tar -xf tapir_imputation.tar && rm tapir_imputation.tar
 
 # General genomic resources; including the reference genome and various liftOver files
 

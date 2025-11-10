@@ -147,6 +147,7 @@ parser.add_argument('-p', '--min_posterior', dest='P', type=float, help="The min
 parser.add_argument('-b', '--min_bayes_factor', dest='B', type=float, help="The minimum Bayes factor (requires allele frequency estimates; taken as max posterior odds / corresponding genotype's prior odds); use w/ GLIMPSE2", default=-1.)
 parser.add_argument('-k', '--keep_indels', dest='K', action='store_true', help="Reports indels, as well as SNPs.")
 parser.add_argument('-B', '--bayes_factor_af_tag', dest='AF_TAG', type=str, help="Use w/ imputation solvers other than GLIMPSE2; what tag to use for the alternative allele frequency; defaults to RAF (glimpse default)", default=AF_TAG)
+parser.add_argument('-F', '--minimum_af', dest='MINF', type=float, help="Minimum allele frequency (across populations). Defaults to 0.0" , default=0.0000)
 
 
 
@@ -155,6 +156,8 @@ autosOnly=flags.A or flags.X
 alsoX = flags.X
 calculateBF=False
 AF_TAG = flags.AF_TAG
+
+
 
 whichIndex=flags.S + 8 
 f = None
@@ -184,8 +187,8 @@ expHets={}
 expHomMinor={}
 if flags.D:
    summaryStatsHandle=open(flags.D, "w")
-
-ntot=0
+nall=0 # includes X and auto
+ntot=0 # just auto
 nhet=0
 nhalt=0
 nhomminor=0 # only count RARE (really, infrequent is a better word; 10%MAF at most) minor homozygotes
@@ -384,20 +387,21 @@ for line in sys.stdin:
                         continue
                 if chrom[-1] != "X":
                     errorSumFilt += 1.0-max(tagVals)
-
-        if chrom[0] >= '0' and chrom[0] <= '9':
-            ntot+=1
-            if finalgts[0] != finalgts[1]:
-                nhet+=1
-            elif finalgts[0] != alleles[0]: # homozygous (else) and not equal to the reference (alleles[0])
-                nhalt+=1
-        
+       
             
-            # autosomes only...
+                    # autosomes only...                                
+        if chrom[0] >= '0' and chrom[0] <= '9':
+            
             if summaryStatsHandle is not None:
                 
                 afs = getAfs(sp[7], POPS)
+                # added 10/8 ; add sanity test on number of allele frequencies, and on the MINOR allele frequency.
+                if len(afs)< 2 or min( afs.values() ) < flags.MINF or max( afs.values() ) > 1.0 - flags.MINF:
+                    continue
+                    
                 fst = hudsonFst(afs)
+                if fst < 0:
+                    continue
                     
                 if fst >= 0.:
                     
@@ -430,7 +434,16 @@ for line in sys.stdin:
                                 nhomminor += 1
                             elif mfreq > (1.-RARE_MAF) and finalgts[0] == alleles[0]: # ref allele is minor
                                 nhomminor += 1
-                        
+                                
+
+                ntot+=1
+                if finalgts[0] != finalgts[1]:
+                    nhet+=1
+                elif finalgts[0] != alleles[0]: # homozygous (else) and not equal to the reference (alleles[0])
+                    nhalt+=1 
+        
+        nall += 1   
+        
         if flags.V:
             print(line, end="", file=f)
         else:
@@ -443,6 +456,7 @@ if summaryStatsHandle is not None:
     if ntot < 1:
         print("No markers found...", file=sys.stderr)
     elif tag:
+        print("percent_x" , (nall-ntot)/ntot, nall, sep="\t", file=summaryStatsHandle)
         # observed and expected heterozygosity
         print("observed_het", round(nhet/ntot, PRECISION), ntot, sep="\t", file=summaryStatsHandle)
         for pop, e in expHets.items():
@@ -471,11 +485,11 @@ if summaryStatsHandle is not None:
                 perror=pow(10, i/-10.0)
                 ws += qualbins[i] * perror
         if s:
-            print("perror_unfilt_mean", round(ws/s, PRECISION), s, file=summaryStatsHandle ) #
+            print("perror_unfilt_mean", round(ws/s, PRECISION), s,sep="\t", file=summaryStatsHandle ) #
         else:
-            print("perror_unfilt_mean", "NaN", s, file=summaryStatsHandle )
+            print("perror_unfilt_mean", "NaN", s, sep="\t",file=summaryStatsHandle )
 
-        print("perror_filt_mean", round(errorSumFilt/ntot, PRECISION), ntot, file=summaryStatsHandle ) 
+        print("perror_filt_mean", round(errorSumFilt/ntot, PRECISION), ntot, sep="\t",file=summaryStatsHandle ) 
             
         for i in range(0, MAXQUAL+1, 5):
             print("phred_qbin_"+tag, "\t", i, "_", i+5, "\t", sum(qualbins[i:(i+5)]), sep="", file=summaryStatsHandle)
