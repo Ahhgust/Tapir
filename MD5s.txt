@@ -1,0 +1,7 @@
+# MD5s calculated by: bzcat `file.tar.bz2` | md5sum
+# OR md5sum TapirOnUbuntu.ova
+tapir_ground_truth.tar.bz2	fd98ebe28da25036559a35f5fab203e4  -
+tapir_resources_all.tar.bz2	a05bab1084b01a19a17484b3fcf5c0f1  -
+tapir_resources.tar.bz2	47d06a9843e2d03fe46d51aa64bdfdb9  -
+tapir_src.tar.bz2	57fa6a9b3a67e7778a250d9f9fc9a72f  -
+TapirOnUbuntu.ova		f5328c14717b3cda2f7b8fbefc1b8121  -
