@@ -52,9 +52,9 @@ In Windows, type:
 ```
 certutil -hashfile "TapirOnUbuntu.ova" MD5
 ```
-To compute a md5sum; compare it to the one in the image. See this [screenshot](../Images/TapirMD5.ng) <br>
+To compute a md5sum; compare it to the one in `MD5s.txt` (e.g., `cat $TAPIR/MD5s.txt`) <br>
 (and note that the VM image needs to be in the same directory for the above command to work).
-If the two hashsums don't agree, you need to re-download the VM image.
+If the two hashsums don't agree, something went wrong with the download and you should do it again.
 
 
 ### Import the Virtual box image
@@ -104,7 +104,7 @@ that means you need to adjust how your host OS interacts with the Virtual Machin
 
 When you log in as `tapir_user` the Tapir mamba environment is preloaded. 
 Tapir is installed to `/home/tapir_user/src/Tapir` (i.e., that is the value of `$TAPIR`).
-And remember, use the low-memory config file (tuned as appropriate).
+And remember, if you're using a lower-end machine, use the low-memory config file (tuned as appropriate).
 
 ## Practical Example
 

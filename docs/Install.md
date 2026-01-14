@@ -63,18 +63,15 @@ wget -O GMWOF5428715_S89_L001_R2_001.fastq.gz 'https://www.dropbox.com/s/qxa8p90
 
 <br><br>
 
-Download the relevant files from Zenodo:
+Download the relevant files:
 ```
-# Imputation panel; this is big
-wget -O tapir_imputation.tar https://zenodo.org/records/14171544/files/tapir_imputation.tar?download=1 
-md5sum tapir_imputation.tar
-tar -xf tapir_imputation.tar && rm tapir_imputation.tar
-
-# General genomic resources; including the reference genome and various liftOver files
-
-# And last, source-code for relevant packages. Includes deepvariant (sif) and GATK (jars)
-
+cd $TAPIR
+# Let's get all files at once:
+wget -O tapir_resources_all.tar.bz2 https://www.dropbox.com/scl/fi/773tvhk1fahpl9nyq3hcc/tapir_resources_all.tar.bz2?rlkey=mxa2bv37ub3ra1cxwnufor03o&dl=1
+bzcat tapir_resources_all.tar.bz2 | md5sum # Double check that the checksums match `a05bab1084b01a19a17484b3fcf5c0f1`
+bunzip2 tapir_resources_all.tar.bz2 && tar -xf tapir_resources_all.tar && rm tar -xf tapir_resources_all.tar # and extract the files
 ```
+
 And set the permissions <br>
 E.G., if you have a nice fast solid state drive mounted to /mnt/disk0/, try
 
@@ -230,14 +227,14 @@ Note, it is quite likely that any recent version of bwa, samtools and bcftools w
 In practice, Tapir supports either bcl2fastq (Mi- Hi- Nova- and *some* Next-Seq instruments) or bcl-convert ("all" instruments, according to [Illumina](https://www.illumina.com/products/by-type/informatics-products/basespace-sequence-hub/apps/bcl-convert.html)). 
 However, bcl2fastq can be readily made into a (shareable) static binary, while bcl-convert is a dynamic executable (it depends on the right libraries being available in the right locations). 
 TL;DR, bcl2fastq just "works" (on near any x86_64 Linux system), while bcl-convert may have to be re-installed or configured. If you wish to use bcl-convert, first test the version provided by Tapir: <br><br>
-`bin/bcl-convert --help`
+`$TAPIR/bin/bcl-convert --help`
 <br><br>
 If a nice usage statement pops up, you're good to go. If not, consider either downloading and re-installing it [LINK](https://www.illumina.com/content/illumina-support/language-master/en/sequencing/sequencing_software/bcl-convert/downloads.html). Don't forget to **replace** the bcl-convert used by Tapir; ie, in `bin/`!
 <br><br>
 If you're lazy (and a bit lucky), instead of downloading and installing bcl-convert, you can try and fix the version we provide-- it could just be missing a library or two. Try: <br><br>
-`ldd bin/bcl-convert`
+`ldd $TAPIR/bin/bcl-convert`
 <br><br>
-and fixing any broken links you see (though if you're not running Centos/Rocky linux, this may be hard to do).
+and fixing any broken links you see (though this may be hard to do).
 <br><br>
 You may wonder *how* Tapir knows which of the two bcl conversion tools you plan on using... the answer lies in the (format of the) ![SampleSheet](../examples/sample_sheets/README.md). TL;DR, the format of the sample sheet tells Tapir which conversion tool you're using.
 

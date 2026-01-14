@@ -1,7 +1,10 @@
 # Changelog
 
 ### Beta changes (post-publication)
-
+# 1/14/2026
+Update to samStats.py to support single-end reads (trivial bugfix)
+Fixed typos in markdown
+	
 ### Alpha changes (pre-publication)
 # 10/3/2025
 Feature: parameters can now be passed to BWA

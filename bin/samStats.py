@@ -118,7 +118,7 @@ def main(args):
 
             readnames.add(c.query_name) #ignore overlapping reads
 
-            if not c.is_proper_pair or c.query_name is None:
+            if (c.is_paired and not c.is_proper_pair) or c.is_qcfail or c.query_name is None: # bugfix AW 1/14/2026. now works w/ single-end reads
                 continue
             
             nreadsWithDups +=1
