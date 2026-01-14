@@ -30,7 +30,7 @@ We provide a virtual machine image of Tapir. Installation instructions are found
 
 ## More information
 
--  ![Click here](https://info-ee.surrey.ac.uk/Teaching/Unix/) *External Link*. Using Tapir requires some basic knowledge of unix. I recommend tutorials 1-6 found in the provided link.
+-  [Click here](https://info-ee.surrey.ac.uk/Teaching/Unix/) *External Link*. Using Tapir requires some basic knowledge of unix. I recommend tutorials 1-6 found in the provided link.
 -  ![Click here](docs/UsingTapirsTools.md) Tapir uses many genomic tools. Here's how you can use them too!
 -  ![Click here](docs/Files.md) Tapir makes *a lot* of files. What are they?
 -  ![Click here](docs/General_Troubleshooting.md) Okay, you ran Tapir, and something went wrong. Here are some pointers
