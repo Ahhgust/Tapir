@@ -96,8 +96,11 @@ if __name__ == "__main__":
     fLevels = [0.50, 0.75, 0.90, 0.95, 0.99]
 
     infoFilter='RAF'
-    iLevels= [1,5,10,50,100,200, 500, 1000] # note that the filter is not on the RAF, but on the Bayes Factor (which is a function of the RAF)
+    iLevels= [1,50,100,200,500,1000] # note that the filter is not on the RAF, but on the Bayes Factor (which is a function of the RAF)
 
+    constant=""
+    if len(sys.argv) > 1:
+        constant=sys.argv[1]
 
     allPairs = AllPairs(fLevels, iLevels)
 
@@ -118,11 +121,15 @@ if __name__ == "__main__":
                 exit(1)
                 
             sampleid=s[-1]
+
+            if constant:
+                sampleid=constant
+                s[-1]=constant
             
             print("\t".join(s), end="")
 
             for p in allPairs:
-                print("\t", p[-2] , "-" , p[-1], sep="", end="")
+                print("\t", constant, p[-2] , "-" , p[-1], sep="", end="")
                 sampleInfo[ p ] = [ 0., 0 ]
             print()
             

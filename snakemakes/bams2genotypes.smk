@@ -1,7 +1,7 @@
 import glob, os, sys, re, time, gzip
 import GenomixHelper
 
-VERSION=0.31
+VERSION=0.32
 # Changelog:
 # See CHANGELOG.md for all changes
 
@@ -10,8 +10,8 @@ VERSION=0.31
 ROOT=os.path.abspath(  os.path.join(workflow.current_basedir, ".."))
 
 # defaults
-configfile: os.path.join(ROOT, "configs", "config_v_2_standard.yaml")
-configpath=os.path.join(ROOT, "configs", "config_v_2_standard.yaml")
+configfile: os.path.join(ROOT, "configs", "config_v_2_standard_degraded.yaml")
+configpath=os.path.join(ROOT, "configs", "config_v_2_standard_degraded.yaml")
 i=0
 
 

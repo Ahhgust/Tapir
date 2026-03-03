@@ -1,7 +1,14 @@
 # Changelog
-
+	
 ### Beta changes (post-publication)
-# 1/14/2026
+# V0.32
+3/3/2026
+Changed the default config to the degraded protocol	
+Also, changed the degraded protocol's GLIMPSE filtering to BF100, GP99 (per pending manuscript)
+In practice, by default reads that align poorly (or are too short, <40bp) are removed.
+More strict filtering on the BF is also added, which will reduce call rate and *genotype* accuracy. The changes improve IBD segment inference, however.
+# V0.31
+1/14/2026
 Update to samStats.py to support single-end reads (trivial bugfix)
 Fixed typos in markdown
 	

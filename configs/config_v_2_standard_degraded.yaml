@@ -1,5 +1,8 @@
-Version: "v.22"
+Version: "v.23"
 # Changelog:
+# 3/2026
+# Changed default filters (GLIMPSE) from BF300 to GP99, BF100
+# This is per Meng Huang's upcoming FSI:G paper.
 # 10/2025
 # added BAM filtering (samtools view) AND ability to add BWA mem parameters
 # 09/2024
@@ -195,7 +198,7 @@ bcf223andmeParams:
     annotationsfile: "resources/hgdp1kgp_autos_sites.filtered.SNV_INDEL.phased.shapeit5.unrelateds.nopp.gnomad3_1_2anno.hg19.vcf.gz" # population allele frequencies (hg19) come 
     annotations: "AF_nfe,AF_fin,AF_afr,AF_ami,AF_eas,AF_sas,AF_amr,AF_asj,AF_mid" # add allele frequency information the the following populations.
     bcffilt: "" # only used when making the "SNP" files. Additional arguments to bcftools can be placed here.
-    glimpse2: "-x -b 300 -p 0.50" # (bcf223andme.py) filters for glimpse2; Include the X; Bayes Factor > 300; Genotype Posterior > 0.5
+    glimpse2: "-x -b 100 -p 0.99" # (bcf223andme.py) filters for glimpse2; Include the X; Bayes Factor > 300; Genotype Posterior > 0.5
     bcftools: "-x -q 20" # (bcf223andme.py)  filters for bcftools; Include the X; Genotype quality >= 20
     
     
