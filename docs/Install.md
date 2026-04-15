@@ -136,6 +136,13 @@ bash Miniforge3-24.11.2-1-Linux-x86_64.sh
 ```
 and type `yes` when asked if you wish to initialize mamba.
 
+And because things change; let's install the mamba solver, which is considerably faster than the conda default.
+(originally, we installed Mamba itself; however Mamber has now been folded into Conda.)
+```
+conda update -n base conda
+conda install -n base conda-libmamba-solver
+```
+
 Create an environment
 ```
 mamba create -n tapir
