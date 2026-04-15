@@ -51,7 +51,7 @@ Genomic files are big; many genomic computations are IO bound (ie, the speed of 
 git clone https://github.com/Ahhgust/Tapir.git
 cd Tapir
 ```
-<br>
+
 (optional)
 You can also download some example FASTQ files:
 (from the Tapir directory)

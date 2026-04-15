@@ -45,6 +45,7 @@ if __name__ == "__main__":
     
     print("#!/bin/bash")
     print("#SBATCH --output=" , results.L, sep="")
+    print("#SBATCH --exclusive") # bugfix for CHI HPC. node-level allocation only
     if results.E:
         print("#SBATCH --exclude=" , results.E, sep="")
 
