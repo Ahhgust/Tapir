@@ -13,7 +13,7 @@ Installation involves three steps, which are as follows:
 
 ## Install
 
-Tapir uses many large files. Because I'm ~~cheap~~ a fan of reproducible science, the largest of these files are stored on zenodo.
+Tapir uses many large files. Because I'm ~~cheap~~ a fan of reproducible science, the largest of these files are stored on [zenodo](https://zenodo.org/records/14171544). Note that the dropbox link should instead be used as it can/is patched.
 In addition, make sure your \*nix machine has the following installed:
 - git, gedit
 
