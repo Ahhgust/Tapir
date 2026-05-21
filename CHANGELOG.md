@@ -2,6 +2,9 @@
 	
 ### Beta changes (post-publication)
 # V0.32
+5/21/2026
+I improved support for bcl-convert; all that changed is how Tapir parses
+the sample sheet (ie, no part of the scientific code changed. instead routines were added to sanity test the sample sheet when and if it's made by Illumina Dragon software.
 3/3/2026
 Changed the default config to the degraded protocol	
 Also, changed the degraded protocol's GLIMPSE filtering to BF100, GP99 (per pending manuscript)

@@ -119,8 +119,13 @@ def parseSamplesheet(sheet):
                 exit(1)
             if len(line) < 1: # tolerate extra whitespace (typically at the end of the file)
                 continue
-                
-            if line.startswith("[Data]"):
+            # Fixed; was startswith("[Data]", but come to find that the dragon tools used by illumina sometimes make this "BCLConvert_Data"
+            if line.startswith("[") and line.find("Data]") > 0:
+                if getHeader: # if getHeader is already true, then we've already gotten the data...
+                    break
+                if line.startswith("[BCLConvert_Data]"):
+                    ret="bcl-convert"
+                    
                 getHeader=True
             elif not getHeader:
                 if EXPERIMENT=="":
@@ -133,6 +138,10 @@ def parseSamplesheet(sheet):
                                 break
                 if line.startswith("AdapterRead1,"): # one of the handful of syntactic differences between a bcl-convert sample sheet and a bcl2fastq sample sheet
                     ret="bcl-convert"
+                if line.startswith("NoLaneSplitting,TRUE"):
+                    print("Invalid bcl-convert setting. Tapir needs data separated by lane! Please set: NoLaneSplitting,FALSE", file=sys.stderr)
+                    exit(1)
+                
             elif getHeader and not getData:
                 getData=True
                 sp = line.split(",")
@@ -150,11 +159,33 @@ def parseSamplesheet(sheet):
                     print("Your sample sheet is corrupt: failed to extract IDs/Names from: ", sheet, sep="\n", file=sys.stderr)
                     exit(1)
                 if libCol<0:
-                    print("Failed to extract the library from", sheet, config["SamplesheetLibraryColumn"], sep="\n", file=sys.stderr)
-                    exit(1)
+                    # added by AW. Cobble together the two indexes; treat that as the library name
+                    if ret=="bcl-convert":
+                        j=-1
+                        k=-1
+                        for i in range(len(sp)):
+                            if sp[i] == "Index":
+                                j=i
+                            elif sp[i] == "Index2":
+                                k=i
+                        if j < 0 or k < 0:
+                            print("Failed to extract the library from", sheet, config["SamplesheetLibraryColumn"], sep="\n", file=sys.stderr)
+                            exit(1)
+                        libCol =(j,k)
+                    else:
+                        print("Failed to extract the library from", sheet, config["SamplesheetLibraryColumn"], sep="\n", file=sys.stderr)
+                        exit(1)
             elif getData:
 
-                sp = line.split(",")
+                
+                if line.startswith("["):
+                    break
+                
+                sp = line.split(",")   
+                # blank line. let's skip it.
+                if sum( [len(elem) for elem in sp]) < 1:
+                    continue
+                
                 sid=sname=""
                 if idCol >= 0:
                     sid = sp[idCol]
@@ -170,8 +201,11 @@ def parseSamplesheet(sheet):
                 if name == "":
                     errs += 1
                     print("Blank sample name detected..", line, sep="\n", file=sys.stderr)
+                if isinstance(libCol, int):    
+                    LIBRARIES[name]=sp[libCol]
+                else:
+                    LIBRARIES[name]=sp[libCol[0]] + "-" + sp[libCol[1]]
                     
-                LIBRARIES[name]=sp[libCol]
                 if name in duptest:
                     print("Duplicate sample names detected; that's a problem", name, line, sep="\n", file=sys.stderr)
                     errs+=1
@@ -189,10 +223,13 @@ def parseSamplesheet(sheet):
         print("Your sample sheet has problems. Please fix them!", file=sys.stderr)
         exit(1)
     
-    if EXPERIMENT == "":
-        print("Failed to parse the Experiment Name (config[Experiment]) from the sample sheet", file=sys.stderr)
-        exit(1)
-    print( " ".join(duptest) , " are the samples in the sample sheet")    
+    #if EXPERIMENT == "":
+    #    print("Failed to parse the Experiment Name (config[Experiment]) from the sample sheet", file=sys.stderr)
+    #    exit(1)
+    #print(LIBRARIES)
+    print( " ".join(duptest) , " are the samples in the sample sheet") 
+
+    
     return ret
 
 def isEmptyGzip(f):
@@ -390,7 +427,10 @@ exp=removeTrailingSlash ( sanitizeString( config["Experiment"] )  )
 # command line trumps the sample sheet.
 if exp != "":
     EXPERIMENT= exp
-
+if EXPERIMENT=="":
+    print("Please set Experiment=ADirectoryYouWantToMake", file=sys.stderr)
+    exit(1)
+    
 # Fastq input?
 if "Fastqdir" in config:
     print("Fastq input detected...")
