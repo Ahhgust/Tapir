@@ -23,6 +23,29 @@ f <- function(x, c, n) {
     return( c/x - 1.0+exp(-n/x) )
 }
 
+# An R version of the estimateRoi function; defined just about the estimateLibraryFunction below.
+#def estimateRoi(estimatedLibrarySize, x, pairs, uniquePairs):
+#    """
+#    taken straight from Picard.
+#        https://github.com/broadinstitute/picard/blob/master/src/main/java/picard/sam/DuplicationMetrics.java
+#     * Estimates the ROI (return on investment) that one would see if a library was sequenced to
+#     * x higher coverage than the observed coverage.
+#     *
+#     * @param estimatedLibrarySize the estimated number of molecules in the library
+#     * @param x                    the multiple of sequencing to be simulated (i.e. how many X sequencing)
+#     * @param pairs                the number of pairs observed in the actual sequencing
+#     * @param uniquePairs          the number of unique pairs observed in the actual sequencing
+#     * @return a number z <= x that estimates if you had pairs*x as your sequencing then you
+#     * would observe uniquePairs*z unique pairs.
+#     * see line 198 of duplicationmetrics.java file (GATK)
+#    """
+#    return estimatedLibrarySize * (1 - Math.exp(-(x * pairs) / estimatedLibrarySize)) / uniquePairs
+
+estimateRoi <- function(estimatedLibrarySize, x, pairs, uniquePairs) {
+#cat( c(estimatedLibrarySize, x, pairs, uniquePairs) )
+	return(estimatedLibrarySize * (1 - exp(-(x * pairs) / estimatedLibrarySize)) / uniquePairs)
+}
+
 # an R version of:
 #https://github.com/broadinstitute/picard/blob/master/src/main/java/picard/sam/DuplicationMetrics.java#L115
 estimateLibraryFractionScalar <- function(nreads, nuniqueReads) {
@@ -122,17 +145,59 @@ filter(tib,
            ) -> alsodepth
 
 
-
-
 filter(tib,
        Label == "Depth" | Label=='DepthWithDups' ) %>%
     group_by(File) %>%
     dplyr::summarize(
                FracSampledOfLibrary=
-               estimateLibraryFraction(
+                estimateLibraryFraction(
                    sum(Count[Label=='DepthWithDups']*Index[Label=='DepthWithDups' ]),
                    sum(Count[Label=='Depth']*Index[Label=='Depth'])
-                   )
+                   ),
+			   Roi2X= sum(Count[Label=='Depth']*Index[Label=='Depth'])/sum(Count[Label=='Depth'])* estimateRoi(
+				sum(Count[Label=='Depth']*Index[Label=='Depth'])/FracSampledOfLibrary, # how many molecules in library (est)
+				2,
+				sum(Count[Label=='DepthWithDups']*Index[Label=='DepthWithDups' ]), # number of reads observed,
+				sum(Count[Label=='Depth']*Index[Label=='Depth']) #number of unique reads...
+				),
+				Roi3X= sum(Count[Label=='Depth']*Index[Label=='Depth'])/sum(Count[Label=='Depth'])* estimateRoi(
+				sum(Count[Label=='Depth']*Index[Label=='Depth'])/FracSampledOfLibrary, # how many molecules in library (est)
+				3,
+				sum(Count[Label=='DepthWithDups']*Index[Label=='DepthWithDups' ]), # number of reads observed,
+				sum(Count[Label=='Depth']*Index[Label=='Depth']) #number of unique reads...
+				),
+				Roi4X= sum(Count[Label=='Depth']*Index[Label=='Depth'])/sum(Count[Label=='Depth'])* estimateRoi(
+				sum(Count[Label=='Depth']*Index[Label=='Depth'])/FracSampledOfLibrary, # how many molecules in library (est)
+				4,
+				sum(Count[Label=='DepthWithDups']*Index[Label=='DepthWithDups' ]), # number of reads observed,
+				sum(Count[Label=='Depth']*Index[Label=='Depth']) #number of unique reads...
+				),
+				Roi5X= sum(Count[Label=='Depth']*Index[Label=='Depth'])/sum(Count[Label=='Depth'])* estimateRoi(
+				sum(Count[Label=='Depth']*Index[Label=='Depth'])/FracSampledOfLibrary, # how many molecules in library (est)
+				5,
+				sum(Count[Label=='DepthWithDups']*Index[Label=='DepthWithDups' ]), # number of reads observed,
+				sum(Count[Label=='Depth']*Index[Label=='Depth']) #number of unique reads...
+				),
+				Roi10X=sum(Count[Label=='Depth']*Index[Label=='Depth'])/sum(Count[Label=='Depth'])* estimateRoi(
+				sum(Count[Label=='Depth']*Index[Label=='Depth'])/FracSampledOfLibrary, # how many molecules in library (est)
+				10,
+				sum(Count[Label=='DepthWithDups']*Index[Label=='DepthWithDups' ]), # number of reads observed,
+				sum(Count[Label=='Depth']*Index[Label=='Depth']) #number of unique reads...
+				),
+				
+				Roi50X=sum(Count[Label=='Depth']*Index[Label=='Depth'])/sum(Count[Label=='Depth'])* estimateRoi(
+				sum(Count[Label=='Depth']*Index[Label=='Depth'])/FracSampledOfLibrary, # how many molecules in library (est)
+				50,
+				sum(Count[Label=='DepthWithDups']*Index[Label=='DepthWithDups' ]), # number of reads observed,
+				sum(Count[Label=='Depth']*Index[Label=='Depth'])), #number of unique reads...
+
+				Roi100X=sum(Count[Label=='Depth']*Index[Label=='Depth'])/sum(Count[Label=='Depth'])* estimateRoi(
+				sum(Count[Label=='Depth']*Index[Label=='Depth'])/FracSampledOfLibrary, # how many molecules in library (est)
+				100,
+				sum(Count[Label=='DepthWithDups']*Index[Label=='DepthWithDups' ]), # number of reads observed,
+				sum(Count[Label=='Depth']*Index[Label=='Depth']) #number of unique reads...
+
+				)
            ) -> complexity
 
 options(dplyr.print_max = 1e9)
@@ -144,6 +209,5 @@ depths %>%
     mutate_if(is.double, ~sprintf(., fmt="%.5f")) %>%
     format_tsv() %>%
     cat()
-#    arrange(Label, MeanDepth) %>%
-#    print(n=nrow(depths))
+
 
