@@ -1,7 +1,7 @@
 import glob, os, sys, re, time, gzip
 import GenomixHelper
 
-VERSION=0.32
+VERSION=0.321
 # Changelog:
 # See CHANGELOG.md for all changes
 

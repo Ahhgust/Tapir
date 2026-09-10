@@ -1,7 +1,7 @@
 import glob, os, sys, re, time, gzip
 import GenomixHelper
 
-VERSION=0.32
+VERSION=0.321
 # See CHANGELOG.md for all changes
 
 ROOT=os.path.abspath(  os.path.join(workflow.current_basedir, ".."))

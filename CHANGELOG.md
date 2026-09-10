@@ -1,6 +1,10 @@
 # Changelog
 	
 ### Beta changes (post-publication)
+# V0.321
+9/10/2026
+Added the return on investment (ROI), as found in GATK's mark duplicates
+ROIs are now added to the samstats.cov files.
 # V0.32
 5/21/2026
 I improved support for bcl-convert; all that changed is how Tapir parses
