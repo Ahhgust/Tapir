@@ -64,7 +64,7 @@ If you are happy with the output, try running Tapir for real:
 Take whatever variant of the above command you used, and just remove the `-n`. Running in the background is probably helpful too:
 For example (modify the below to match the flags/additions you made from the above)
 ```
-nohup snakemake -s -s $TAPIR/snakemakes/bcl2bam.smk  -c16 --config Bcldir=/eva/staging/Novaseq/Novaseq/Output/250103_A01324_0120_BHWGY2DMXY   &> tapirOutput.oe &
+nohup snakemake -s $TAPIR/snakemakes/bcl2bam.smk  -c16 --config Bcldir=/eva/staging/Novaseq/Novaseq/Output/250103_A01324_0120_BHWGY2DMXY   &> tapirOutput.oe &
 ```	
 which removes the -n (not a dry run, but the real thing), and tells unix to write all of the output to `tapirOutput.oe`, to run this command in the background (final `&`), and even if I log out, let this program run (`nohup`).
 <br>
