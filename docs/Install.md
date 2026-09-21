@@ -59,17 +59,18 @@ You can also download some example FASTQ files:
 cd examples/fastq_example
 wget -O GMWOF5428715_S89_L001_R1_001.fastq.gz 'https://www.dropbox.com/s/qxa8p900k1ct53a/GMWOF5428715_S89_L001_R1_001.fastq.gz?dl=1'
 wget -O GMWOF5428715_S89_L001_R2_001.fastq.gz 'https://www.dropbox.com/s/qxa8p900k1ct53a/GMWOF5428715_S89_L001_R2_001.fastq.gz?dl=1'
+cd ../..
 ```
 
 <br><br>
 
 Download the relevant files:
 ```
-cd $TAPIR
+# From the Tapir/ directory 
 # Let's get all files at once:
 wget -O tapir_resources_all.tar.bz2 https://www.dropbox.com/scl/fi/773tvhk1fahpl9nyq3hcc/tapir_resources_all.tar.bz2?rlkey=mxa2bv37ub3ra1cxwnufor03o&dl=1
 bzcat tapir_resources_all.tar.bz2 | md5sum # Double check that the checksums match `a05bab1084b01a19a17484b3fcf5c0f1`
-bunzip2 tapir_resources_all.tar.bz2 && tar -xf tapir_resources_all.tar && rm tar -xf tapir_resources_all.tar # and extract the files
+bunzip2 tapir_resources_all.tar.bz2 && tar -xf tapir_resources_all.tar && rm tapir_resources_all.tar # and extract the files
 ```
 
 And set the permissions <br>
